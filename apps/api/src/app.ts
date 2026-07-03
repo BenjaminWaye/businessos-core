@@ -38,6 +38,8 @@ import {
 import {
   reactToEvent,
   replayWorkflows,
+  startTask,
+  applyTaskResult,
   WORKFLOW_REGISTRY,
   defaultDeps as workflowDefaultDeps,
 } from "@businessos/workflows";
@@ -162,6 +164,12 @@ export function createApp(pool: Pool): express.Express {
     res.status(201).json(after.bills.find((b) => b.id === billId));
   }));
 
+  app.get("/accounting/verifications", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const accounting = await replayAccounting(store, companyId);
+    res.json(accounting.verifications);
+  }));
+
   app.post("/accounting/verifications", asyncRoute(async (req, res) => {
     const { companyId, series, date, description, rows, sourceEventId } = req.body ?? {};
     const company = requireCompanyId(companyId);
@@ -248,6 +256,39 @@ export function createApp(pool: Pool): express.Express {
     const companyId = requireCompanyId(req.query["companyId"]);
     const workflows = await replayWorkflows(store, companyId);
     res.json(workflows.tasks);
+  }));
+
+  app.post("/tasks/:id/start", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.body?.companyId);
+    const workflows = await replayWorkflows(store, companyId);
+    const task = workflows.tasks.find((t) => t.id === req.params["id"]);
+    if (!task) throw new HttpError(404, "task not found");
+
+    const draft = startTask(task, { companyId }, workflowDeps);
+    await store.append([draft]);
+    const after = await replayWorkflows(store, companyId);
+    res.status(200).json(after.tasks.find((t) => t.id === task.id));
+  }));
+
+  app.post("/tasks/:id/complete", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.body?.companyId);
+    const workflows = await replayWorkflows(store, companyId);
+    const task = workflows.tasks.find((t) => t.id === req.params["id"]);
+    if (!task) throw new HttpError(404, "task not found");
+
+    const draft = applyTaskResult(
+      task,
+      { companyId, result: { taskId: task.id, status: "completed", output: req.body?.output } },
+      workflowDeps,
+    );
+    await store.append([draft]);
+    const after = await replayWorkflows(store, companyId);
+    res.status(200).json(after.tasks.find((t) => t.id === task.id));
+  }));
+
+  app.get("/events", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    res.json(await store.byCompany(companyId));
   }));
 
   app.get("/state", asyncRoute(async (req, res) => {

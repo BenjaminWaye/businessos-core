@@ -173,3 +173,97 @@ describe("bill lifecycle over HTTP", () => {
       .expect(404);
   });
 });
+
+describe("GET /events", () => {
+  it("returns the raw event log in canonical order", async () => {
+    const companyId = newCompanyId();
+    await request(app).post("/customers").send({ companyId, name: "Ada" }).expect(201);
+    await request(app).post("/suppliers").send({ companyId, name: "Acme" }).expect(201);
+
+    const events = await request(app).get(`/events?companyId=${companyId}`).expect(200);
+    expect(events.body.map((e: { type: string }) => e.type)).toEqual([
+      "CustomerCreated",
+      "SupplierCreated",
+    ]);
+    expect(events.body[0]).toEqual(
+      expect.objectContaining({ seq: expect.any(Number), id: expect.any(String), companyId }),
+    );
+  });
+
+  it("without companyId is a 400", async () => {
+    await request(app).get("/events").expect(400);
+  });
+});
+
+describe("GET /accounting/verifications", () => {
+  it("lists verifications posted for a company", async () => {
+    const companyId = newCompanyId();
+    const created = await request(app)
+      .post("/accounting/verifications")
+      .send({
+        companyId,
+        series: "A",
+        date: "2026-01-15",
+        description: "Test entry",
+        rows: [
+          { account: "1930", debit: 1000, credit: 0 },
+          { account: "3001", debit: 0, credit: 1000 },
+        ],
+      })
+      .expect(201);
+
+    const list = await request(app).get(`/accounting/verifications?companyId=${companyId}`).expect(200);
+    expect(list.body).toEqual([
+      expect.objectContaining({ id: created.body.verificationId, number: created.body.number }),
+    ]);
+  });
+});
+
+describe("task actions", () => {
+  async function seedTask(companyId: string) {
+    const customer = await request(app).post("/customers").send({ companyId, name: "Ada" }).expect(201);
+    const invoice = await request(app)
+      .post("/invoices")
+      .send({ companyId, customerId: customer.body.customerId, amount: 1000, dueDate: "2026-12-31" })
+      .expect(201);
+    // Creating an invoice drives invoice-workflow, which creates a SendInvoiceTask.
+    const tasks = await request(app).get(`/tasks?companyId=${companyId}`).expect(200);
+    return { invoiceId: invoice.body.invoiceId, taskId: tasks.body[0].id };
+  }
+
+  it("start -> complete moves a task through created -> in_progress -> completed", async () => {
+    const companyId = newCompanyId();
+    const { taskId } = await seedTask(companyId);
+
+    const started = await request(app)
+      .post(`/tasks/${taskId}/start`)
+      .send({ companyId })
+      .expect(200);
+    expect(started.body).toMatchObject({ id: taskId, status: "in_progress" });
+
+    const completed = await request(app)
+      .post(`/tasks/${taskId}/complete`)
+      .send({ companyId, output: { sent: true } })
+      .expect(200);
+    expect(completed.body).toMatchObject({ id: taskId, status: "completed", output: { sent: true } });
+  });
+
+  it("completing a task that hasn't been started is a 400", async () => {
+    const companyId = newCompanyId();
+    const { taskId } = await seedTask(companyId);
+
+    const res = await request(app)
+      .post(`/tasks/${taskId}/complete`)
+      .send({ companyId })
+      .expect(400);
+    expect(res.body.error).toMatch(/must be "in_progress"/);
+  });
+
+  it("starting an unknown task is a 404", async () => {
+    const companyId = newCompanyId();
+    await request(app)
+      .post("/tasks/00000000-0000-0000-0000-000000000000/start")
+      .send({ companyId })
+      .expect(404);
+  });
+});

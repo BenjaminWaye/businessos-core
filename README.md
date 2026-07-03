@@ -48,7 +48,7 @@ createdb businessos
 createdb businessos_test
 pnpm install
 pnpm migrate                  # applies infrastructure/migrations/ to DATABASE_URL
-pnpm test                     # 106 tests across kernel / accounting-se / workflows / api
+pnpm test                     # 112 tests across kernel / accounting-se / workflows / api
 pnpm demo                     # walks through a customer + invoice lifecycle by hand, prints state
 pnpm dev:api                  # starts the HTTP API on http://localhost:3001
 ```
@@ -98,6 +98,7 @@ POST /bill-payments         { companyId, billId, amount }            -> Bill
 
 ```
 POST /accounting/verifications         { companyId, series, date, description, rows, sourceEventId? } -> { verificationId, number }
+GET  /accounting/verifications?companyId=...                                    -> Verification[]
 POST /accounting/fiscal-years          { companyId, startDate, endDate }        -> { fiscalYearId }
 POST /accounting/fiscal-years/:id/close { companyId }                           -> { fiscalYearId, closed }
 GET  /accounting/trial-balance?companyId=...
@@ -111,25 +112,31 @@ Postings are never automatic — `POST /accounting/verifications` is how
 something becomes a ledger entry. Nothing in `/invoices` or `/payments`
 touches the ledger by itself (yet).
 
-### Workflows & tasks (read-only for now)
+### Workflows & tasks
 
 ```
-GET /workflows?companyId=...   -> WorkflowInstance[]
-GET /tasks?companyId=...        -> Task[]
+GET  /workflows?companyId=...        -> WorkflowInstance[]
+GET  /tasks?companyId=...             -> Task[]
+POST /tasks/:id/start   { companyId }                    -> Task (created -> in_progress)
+POST /tasks/:id/complete { companyId, output? }           -> Task (in_progress -> completed)
 ```
 
 Creating an invoice, sending it, and paying it automatically drives the
 built-in `invoice-workflow` (see `packages/workflows/src/definitions.ts`):
 `InvoiceCreated` starts it and creates a `SendInvoiceTask`; `InvoiceSent`
 advances it and creates a `MonitorPaymentTask`; `PaymentRegistered` completes
-it. A UI can poll these two endpoints to show task/workflow status — there's
-no task-execution UI wiring yet (no `PATCH /tasks/:id`), since nothing in this
-repo executes tasks yet.
+it. `/tasks/:id/start` and `/tasks/:id/complete` let a UI actually work a
+task — this doesn't execute anything for real (no email is sent, no bank
+call is made); it's a manual stand-in for the execution-agent layer that
+doesn't exist yet. There's no `/tasks/:id/fail` or block endpoint yet — the
+underlying kernel command (`applyTaskResult`) supports it, just not wired to
+a route; ask if the UI needs it.
 
-### Everything at once
+### Raw event log & everything at once
 
 ```
-GET /state?companyId=...   -> { customers, suppliers, invoices, payments, bills, billPayments }
+GET /events?companyId=...   -> StoredEvent[]   (the immutable log itself, in canonical order — for a Replay/debug screen)
+GET /state?companyId=...    -> { customers, suppliers, invoices, payments, bills, billPayments }
 ```
 
 ### Errors
