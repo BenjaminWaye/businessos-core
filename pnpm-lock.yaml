@@ -20,6 +20,9 @@ importers:
       '@businessos/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
+      '@businessos/workflows':
+        specifier: workspace:*
+        version: link:../../packages/workflows
       express:
         specifier: ^4.21.1
         version: 4.22.2
@@ -73,6 +76,22 @@ importers:
       '@businessos/kernel':
         specifier: workspace:*
         version: link:../../kernel
+    devDependencies:
+      '@types/node':
+        specifier: ^22.9.0
+        version: 22.20.0
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
+      vitest:
+        specifier: ^2.1.5
+        version: 2.1.9(@types/node@22.20.0)
+
+  packages/workflows:
+    dependencies:
+      '@businessos/kernel':
+        specifier: workspace:*
+        version: link:../kernel
     devDependencies:
       '@types/node':
         specifier: ^22.9.0

@@ -35,11 +35,18 @@ import {
   exportSie4,
   defaultDeps as accountingDefaultDeps,
 } from "@businessos/accounting-se";
+import {
+  reactToEvent,
+  replayWorkflows,
+  WORKFLOW_REGISTRY,
+  defaultDeps as workflowDefaultDeps,
+} from "@businessos/workflows";
 
 export function createApp(pool: Pool): express.Express {
   const store = new EventStore(pool);
   const deps = defaultDeps();
   const accountingDeps = accountingDefaultDeps();
+  const workflowDeps = workflowDefaultDeps();
   const app = express();
   app.use(express.json());
 
@@ -76,7 +83,10 @@ export function createApp(pool: Pool): express.Express {
       { companyId: requireCompanyId(companyId), customerId, amount, currency, dueDate },
       deps,
     );
-    await store.append([draft]);
+    const [stored] = await store.append([draft]);
+    // InvoiceCreated is a workflow trigger — the engine reacts and may post
+    // WorkflowStarted/TaskCreated. This route never decides that itself.
+    await reactToEvent(store, stored!, WORKFLOW_REGISTRY, workflowDeps);
     res.status(201).json({ invoiceId: draft.payload.invoiceId });
   }));
 
@@ -93,7 +103,8 @@ export function createApp(pool: Pool): express.Express {
     if (!invoice) throw new HttpError(404, "invoice not found");
 
     const draft = sendInvoice(invoice, { companyId }, deps);
-    await store.append([draft]);
+    const [stored] = await store.append([draft]);
+    await reactToEvent(store, stored!, WORKFLOW_REGISTRY, workflowDeps);
     res.status(200).json({ invoiceId: invoice.id, status: "sent" });
   }));
 
@@ -105,7 +116,8 @@ export function createApp(pool: Pool): express.Express {
     if (!invoice) throw new HttpError(404, "invoice not found");
 
     const draft = registerPayment(invoice, { companyId: company, amount }, deps);
-    await store.append([draft]);
+    const [stored] = await store.append([draft]);
+    await reactToEvent(store, stored!, WORKFLOW_REGISTRY, workflowDeps);
     const after = await replayCompany(store, company);
     res.status(201).json(after.invoices.find((i) => i.id === invoiceId));
   }));
@@ -224,6 +236,18 @@ export function createApp(pool: Pool): express.Express {
       accounting.verifications,
     );
     res.type("text/plain").send(text);
+  }));
+
+  app.get("/workflows", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const workflows = await replayWorkflows(store, companyId);
+    res.json(workflows.instances);
+  }));
+
+  app.get("/tasks", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const workflows = await replayWorkflows(store, companyId);
+    res.json(workflows.tasks);
   }));
 
   app.get("/state", asyncRoute(async (req, res) => {
