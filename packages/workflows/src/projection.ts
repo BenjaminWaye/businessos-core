@@ -31,6 +31,7 @@ function apply(state: WorkflowState, event: StoredEvent): WorkflowState {
         correlationValue: p.correlationValue,
         status: "waiting",
         currentStep: p.startingStepId,
+        waitingForEvent: p.waitingForEvent,
         createdAt: event.occurredAt,
       };
       return { ...state, instances: [...state.instances, instance] };
@@ -41,7 +42,9 @@ function apply(state: WorkflowState, event: StoredEvent): WorkflowState {
       return {
         ...state,
         instances: state.instances.map((i) =>
-          i.id === p.workflowInstanceId ? { ...i, currentStep: p.stepId } : i,
+          i.id === p.workflowInstanceId
+            ? { ...i, currentStep: p.stepId, waitingForEvent: p.waitingForEvent }
+            : i,
         ),
       };
     }
@@ -51,7 +54,7 @@ function apply(state: WorkflowState, event: StoredEvent): WorkflowState {
       return {
         ...state,
         instances: state.instances.map((i) =>
-          i.id === p.workflowInstanceId ? { ...i, status: "completed" } : i,
+          i.id === p.workflowInstanceId ? { ...i, status: "completed", waitingForEvent: null } : i,
         ),
       };
     }
@@ -61,7 +64,7 @@ function apply(state: WorkflowState, event: StoredEvent): WorkflowState {
       return {
         ...state,
         instances: state.instances.map((i) =>
-          i.id === p.workflowInstanceId ? { ...i, status: "failed" } : i,
+          i.id === p.workflowInstanceId ? { ...i, status: "failed", waitingForEvent: null } : i,
         ),
       };
     }

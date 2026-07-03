@@ -48,7 +48,7 @@ createdb businessos
 createdb businessos_test
 pnpm install
 pnpm migrate                  # applies infrastructure/migrations/ to DATABASE_URL
-pnpm test                     # 105 tests across kernel / accounting-se / workflows / api
+pnpm test                     # 106 tests across kernel / accounting-se / workflows / api
 pnpm demo                     # walks through a customer + invoice lifecycle by hand, prints state
 pnpm dev:api                  # starts the HTTP API on http://localhost:3001
 ```

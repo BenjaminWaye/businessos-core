@@ -49,6 +49,7 @@ describe("10.1 — workflow trigger", () => {
       correlationValue: "inv-1",
       triggerEventId: "evt-created",
       startingStepId: "send",
+      waitingForEvent: "InvoiceSent", // persisted, not re-derived from the registry at read time
     });
     const taskCreated = emitted[1]!;
     expect(taskCreated.payload).toMatchObject({
@@ -58,7 +59,11 @@ describe("10.1 — workflow trigger", () => {
 
     const state = foldDrafts(emitted);
     expect(state.instances).toHaveLength(1);
-    expect(state.instances[0]).toMatchObject({ status: "waiting", currentStep: "send" });
+    expect(state.instances[0]).toMatchObject({
+      status: "waiting",
+      currentStep: "send",
+      waitingForEvent: "InvoiceSent",
+    });
     expect(state.tasks).toHaveLength(1);
     expect(state.tasks[0]).toMatchObject({ type: "SendInvoiceTask", status: "created" });
   });
@@ -84,7 +89,11 @@ describe("10.2 — multi-event progression", () => {
     expect(reactions.map((e) => e.type)).toEqual(["WorkflowStepAdvanced", "TaskCreated"]);
     allDrafts = [...allDrafts, ...reactions];
     state = foldDrafts(allDrafts);
-    expect(state.instances[0]).toMatchObject({ status: "waiting", currentStep: "monitor" });
+    expect(state.instances[0]).toMatchObject({
+      status: "waiting",
+      currentStep: "monitor",
+      waitingForEvent: "PaymentRegistered",
+    });
     expect(state.tasks).toHaveLength(2);
     expect(state.tasks[1]).toMatchObject({ type: "MonitorPaymentTask", status: "created" });
 
@@ -92,7 +101,11 @@ describe("10.2 — multi-event progression", () => {
     expect(reactions.map((e) => e.type)).toEqual(["WorkflowStepAdvanced", "WorkflowCompleted"]);
     allDrafts = [...allDrafts, ...reactions];
     state = foldDrafts(allDrafts);
-    expect(state.instances[0]).toMatchObject({ status: "completed", currentStep: "complete" });
+    expect(state.instances[0]).toMatchObject({
+      status: "completed",
+      currentStep: "complete",
+      waitingForEvent: null, // terminal — not waiting on anything
+    });
     // No task is created for the final step — it just closes out the workflow.
     expect(state.tasks).toHaveLength(2);
   });
@@ -119,6 +132,31 @@ describe("10.2 — multi-event progression", () => {
     const inv2 = state.instances.find((i) => i.correlationValue === "inv-2")!;
     expect(inv1.currentStep).toBe("monitor");
     expect(inv2.currentStep).toBe("send");
+  });
+});
+
+describe("waitingForEvent is persisted and authoritative, not re-derived from the registry", () => {
+  it("an instance does not advance on an event the registry would allow, if the persisted field disagrees", () => {
+    // Simulates definition drift: this instance was started under a version
+    // of invoice-workflow where its next step waited on something else. Even
+    // though *today's* registry says "InvoiceSent" is next for step "send",
+    // the persisted waitingForEvent is what gates advancement.
+    const driftedState = {
+      instances: [
+        {
+          id: "wf-drift",
+          workflowDefinitionId: "invoice-workflow",
+          correlationValue: "inv-1",
+          status: "waiting" as const,
+          currentStep: "send",
+          waitingForEvent: "SomeRetiredEventType",
+          createdAt: "2026-01-01T00:00:00.000Z",
+        },
+      ],
+      tasks: [],
+    };
+
+    expect(react(driftedState, invoiceSent, WORKFLOW_REGISTRY, fixedDeps())).toEqual([]);
   });
 });
 

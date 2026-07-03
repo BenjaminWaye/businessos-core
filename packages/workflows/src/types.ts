@@ -65,6 +65,20 @@ export interface WorkflowInstance {
   correlationValue: string;
   status: WorkflowInstanceStatus;
   currentStep: string;
+  /**
+   * The event type that would advance this instance past its current step,
+   * or null if it's not waiting on anything (terminal, or the current step
+   * is the last one). Persisted explicitly on WorkflowStarted/
+   * WorkflowStepAdvanced at the moment each step is entered — the engine
+   * treats this as the authoritative answer to "what is this instance
+   * waiting for", rather than re-deriving it from whatever WorkflowDefinition
+   * happens to be loaded in code at reaction time. That keeps the log
+   * self-explaining: if a workflow definition is ever edited later (a step
+   * reordered, an onEvent changed), replay of *existing* instances still
+   * matches what actually happened live, because the wait condition was
+   * captured as data, not re-inferred from mutable code.
+   */
+  waitingForEvent: string | null;
   createdAt: string;
 }
 
@@ -76,12 +90,16 @@ export interface WorkflowStarted {
   triggerEventId: string;
   /** The first step's id — steps[0] always executes synchronously at start. */
   startingStepId: string;
+  /** See WorkflowInstance.waitingForEvent. */
+  waitingForEvent: string | null;
 }
 
 export interface WorkflowStepAdvanced {
   workflowInstanceId: string;
   stepId: string;
   triggerEventId: string;
+  /** See WorkflowInstance.waitingForEvent. */
+  waitingForEvent: string | null;
 }
 
 export interface WorkflowCompleted {

@@ -23,6 +23,13 @@
  *      instance, UNLESS one already exists for the same
  *      (definitionId, correlationValue) pair — this makes `react` safe to
  *      call twice with the same event without creating duplicate instances.
+ *
+ * The *gate* for (1) — "is this instance even waiting on this event type" —
+ * is checked against `instance.waitingForEvent`, which was persisted when the
+ * instance entered its current step (see types.ts). The registry is still
+ * consulted after that gate passes, but only to get the step's actual
+ * behavior (its `condition`/`createTask`, which are functions and so can
+ * never be persisted) — never to decide *whether* the event applies.
  */
 
 import type { EventDraft, StoredEvent } from "@businessos/kernel";
@@ -42,17 +49,20 @@ export function react(
   // 1. Advance existing instances waiting on this event type.
   for (const instance of state.instances) {
     if (instance.status !== "waiting") continue;
+    if (instance.waitingForEvent !== event.type) continue; // persisted gate — authoritative
 
     const definition = registry.find((d) => d.id === instance.workflowDefinitionId);
     if (!definition) continue; // unknown/retired definition — ignore, don't crash replay
 
     const stepIndex = definition.steps.findIndex((s) => s.id === instance.currentStep);
     const nextStep = definition.steps[stepIndex + 1];
-    if (!nextStep || nextStep.onEvent !== event.type) continue;
+    if (!nextStep || nextStep.onEvent !== event.type) continue; // defense in depth: code must still agree
     if (definition.correlationKey(event.payload) !== instance.correlationValue) continue;
     if (nextStep.condition && !nextStep.condition({ instance }, event.payload)) continue;
 
-    emitted.push(advanceWorkflow(event.companyId, instance.id, nextStep, event.id, deps));
+    const afterNextStep = definition.steps[stepIndex + 2];
+    const waitingForEvent = afterNextStep?.onEvent ?? null;
+    emitted.push(advanceWorkflow(event.companyId, instance.id, nextStep, waitingForEvent, event.id, deps));
     if (nextStep.createTask) {
       emitted.push(createTask(event.companyId, instance.id, nextStep.createTask, event.payload, deps));
     }

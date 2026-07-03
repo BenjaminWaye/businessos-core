@@ -61,6 +61,7 @@ export function startWorkflow(
       correlationValue,
       triggerEventId,
       startingStepId: startingStep.id,
+      waitingForEvent: definition.steps[1]?.onEvent ?? null,
     },
   };
 }
@@ -69,6 +70,7 @@ export function advanceWorkflow(
   companyId: string,
   workflowInstanceId: string,
   step: WorkflowStep,
+  waitingForEvent: string | null,
   triggerEventId: string,
   deps: CommandDeps,
 ): EventDraft<WorkflowStepAdvanced> {
@@ -77,7 +79,7 @@ export function advanceWorkflow(
     companyId,
     type: "WorkflowStepAdvanced",
     occurredAt: deps.now(),
-    payload: { workflowInstanceId, stepId: step.id, triggerEventId },
+    payload: { workflowInstanceId, stepId: step.id, triggerEventId, waitingForEvent },
   };
 }
 
