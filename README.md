@@ -1,164 +1,178 @@
-# BusinessOS
+# businessos-core
 
-A deterministic, event-sourced operating system for running a business: a stable
-**kernel** (business truth), pluggable **modules** (accounting, CRM, payroll…),
-deterministic **workflows**, and an external **execution layer** of agents that
-perform real-world actions. AI interprets — it never decides.
+Deterministic, event-sourced backend for running a business: a stable
+**kernel** (business truth), pluggable **modules** (accounting today; CRM,
+payroll later), a deterministic **workflow/task engine**, and an HTTP API. This
+repo is the backend only — no UI lives here. A separate frontend is expected
+to talk to it over the HTTP API described below.
 
-## Status: Milestone 4 — Workflow + Task System
+## Core idea
 
-A deterministic workflow engine (`packages/workflows`) that converts business
-events into trackable tasks — no external execution, no side effects, "tasks
-are the only output." Same architecture as accounting-se: its own event types,
-its own projection, reuses the shared Postgres event log.
+Nothing is stored as "current state." Every fact is an **event**, appended to
+one immutable, append-only Postgres log per company. All state — customers,
+invoices, ledger balances, workflow instances — is *derived* by replaying that
+log through a pure projection function. Rebuilding from scratch always
+produces identical output; that's the property the whole system is built to
+guarantee, and it's what every test suite in this repo is ultimately checking.
 
-- **WorkflowDefinition** (`definitions.ts`): static, in-code process
-  descriptions — `triggers`, a `correlationKey` extractor (e.g. invoiceId, so
-  later events route to the right instance), and a strictly-ordered `steps[]`.
-  `steps[0]` runs synchronously the moment a workflow starts; every later step
-  is gated by `onEvent` (+ optional pure `condition`)
-- **Engine** (`engine.ts`): `react(state, event, registry, deps) -> EventDraft[]`
-  — pure. Given an incoming event it (1) advances any instance whose *current*
-  step is waiting on that exact event type + matching correlation value, and
-  (2) starts new instances for any triggered definition, idempotently (won't
-  double-create if called twice with the same event). Never appends anything
-  itself and never calls anything external — only decides which
-  `WorkflowStarted`/`WorkflowStepAdvanced`/`WorkflowCompleted`/`TaskCreated`
-  events *should* exist
-- **Task lifecycle**: `created → in_progress → completed / failed / blocked`,
-  driven by `startTask`/`applyTaskResult` — never called by the engine itself,
-  only by whatever actually executes a task (a human today; an execution
-  agent in a later milestone)
-- **Driver** (`driver.ts`): the only piece that actually appends — replays
-  current workflow state, calls `react()`, persists the result. Wired into
-  `apps/api`'s `/invoices`, `/invoices/:id/send`, and `/payments` routes, so
-  a real `InvoiceCreated → InvoiceSent → PaymentRegistered` sequence drives
-  the example `invoice-workflow` end-to-end through the live API
-- **HTTP API**: `GET /workflows`, `GET /tasks`
-- **Tests** — 22 tests: trigger (10.1), multi-event progression (10.2),
-  invalid/out-of-order sequences handled consistently + a synthetic
-  condition-gated step (10.3), and a DB-backed replay test proving M2 and M4
-  events coexist and rebuild identically (10.4)
+```
+Command → Event → (append to log) → Projection (pure fold) → State
+```
 
-One deviation from the literal spec worth flagging: the suggested folder
-layout implies separate stores (`workflowStore.ts`, `taskStore.ts`,
-`workflowInstanceStore.ts`). Consistent with accounting-se, this module has no
-storage of its own — it reuses the kernel's single `EventStore` and folds only
-the event types it understands. Also, `WorkflowInstance.status` keeps the
-spec's `"active"` value in its type for forward compatibility, but the engine
-never produces it: step execution is a synchronous pure function, so an
-instance goes straight from nonexistent to `waiting` or `completed` — there's
-no genuinely async gap yet for `"active"` to represent.
+## What's in this repo
 
-### Milestone 3 — Swedish Accounting Module
+| Package | What it is |
+|---|---|
+| [`packages/kernel`](packages/kernel) | Event store (Postgres, immutable/append-only), command→event pipeline, projection engine, replay. Business domain: Customer, Supplier, Invoice + Payment (accounts receivable), Bill + BillPayment (accounts payable). |
+| [`packages/modules/accounting-se`](packages/modules/accounting-se) | Swedish bookkeeping: BAS chart of accounts, double-entry verifications, fiscal years, VAT, trial balance / income statement / balance sheet, SIE4 export. Reuses the kernel's event log; the kernel has no idea this exists. |
+| [`packages/workflows`](packages/workflows) | Deterministic workflow + task engine. Converts business events (e.g. `InvoiceCreated`) into tracked tasks (e.g. `SendInvoiceTask`) with a full lifecycle, without ever executing anything itself. |
+| [`apps/api`](apps/api) | Express HTTP layer over all of the above. No business logic of its own — every route loads state, calls a command, appends, responds. **This is what a UI should talk to.** |
 
-The first real **module** (`packages/modules/accounting-se`) lives entirely
-outside the kernel and the M2 domain, proving the plug-in architecture: it
-defines its own event types and projection, and reuses the *same* Postgres
-event log — the kernel never knows accounting exists.
+Each package also fully explains its own design decisions in its source
+comments and tests — this README is the map, not the territory.
 
-- **BAS chart of accounts** (curated subset: bank, receivables, payables,
-  input/output VAT, sales, purchases) — `accounts.ts`
-- **Verification** (verifikation): double-entry, `debit === credit` enforced
-  at command time, immutable once posted — corrections are a new *reversing*
-  verification (mirrored debit/credit), never an edit or delete
-- **Fiscal years**: `openFiscalYear` / `closeFiscalYear`; a closed year locks
-  every verification date within it — `createVerification` rejects postings
-  into a closed period
-- **Sequential voucher numbering** per series (e.g. `"A"`), computed from
-  current state the same way M2's `sendInvoice` validates against the current
-  `Invoice`
-- **Translator** (`translator.ts`): pure functions mapping M2 domain entities
-  (Invoice, Payment, Bill, BillPayment) to balanced verification drafts —
-  this is where "a business event MAY generate accounting entries, but the
-  kernel never generates accounting logic" actually lives. Nothing is
-  auto-posted; the caller (API/demo) decides when to translate and post.
-- **Reports** (`reports.ts`), all pure functions over verifications: ledger,
-  trial balance, income statement, balance sheet, VAT report. The
-  accounting identity `assets = equity + liabilities + (revenue − costs)`
-  falls out automatically from every verification balancing — never
-  special-cased in the reports (see the reports test suite)
-- **SIE4 export** (MVP, not certified) — `sie.ts`
-- **HTTP API**: `POST /accounting/verifications /fiscal-years`,
-  `POST /accounting/fiscal-years/:id/close`, `GET /accounting/trial-balance
-  /income-statement /balance-sheet /vat-report /sie`
-- **Tests** — 33 tests: balanced-entry enforcement, reversal semantics, locked
-  periods, sequential numbering, VAT split exactness, the accounting
-  identity, and a DB-backed integration test proving M2 and M3 events coexist
-  in one log without either projection seeing the other's event types
+### What's deliberately NOT here yet
 
-One clarification worth flagging: the original spec listed `FiscalYearClosed`
-but not an explicit "opened" event — `FiscalYearOpened` was added because a
-fiscal year has to exist before it can be closed or checked against.
+No AI, no external execution (bank integrations, BankID, email sending, OCR),
+no payroll, no UI. The workflow engine only ever *creates tasks* — it never
+calls an external system. That's the next layer (execution agents), not yet
+built.
 
-### Milestone 2 — Business Domain Core
+## Quick start
 
-Real business objects on top of the kernel:
-
-- **Domain**: Customer, Supplier, Invoice, Payment (accounts receivable), Bill,
-  BillPayment (accounts payable) (`packages/kernel/src/state.ts`)
-- **Commands**: `createCustomer`, `updateCustomer`, `createSupplier`,
-  `createInvoice`, `sendInvoice`, `registerPayment`, `receiveBill`,
-  `approveBill`, `registerBillPayment` (`packages/kernel/src/commands.ts`)
-- **Invoice lifecycle** (AR — money owed to you): `draft → sent →
-  partially_paid/paid`, folded from events. `overdue` is **derived at read
-  time**, never persisted as an event — passing time is not a business fact
-  (`packages/kernel/src/projection.ts`)
-- **Bill lifecycle** (AP — money you owe a supplier): `received → approved →
-  partially_paid/paid`, same overdue-derivation rule. Kept as a **separate
-  entity from Invoice**, not "Invoice with a direction flag" — you *send* an
-  invoice but *receive* a bill, and a bill needs approval, which has no
-  equivalent step on the sales side. This also keeps input vs. output VAT
-  (Milestone 3) easy to reason about.
-- **Rules enforced by commands**: an invoice must be `draft` to send, a bill
-  must be `received` to approve; a payment must reference a sent
-  invoice/approved bill and cannot exceed the remaining balance
-- **HTTP API** (`apps/api`) — thin layer over the kernel, no business logic of
-  its own: `POST /customers /suppliers /invoices /payments /bills
-  /bill-payments`, `POST /invoices/:id/send /bills/:id/approve`,
-  `GET /customers /invoices /bills /state`
-- **Tests** — invoice lifecycle (draft→sent→paid), bill lifecycle
-  (received→approved→paid), partial payment, overdue derivation, ordering
-  invariance, replay — 41 kernel tests, plus 9 Supertest integration tests
-  over the HTTP API (happy paths, 404s on unknown ids, 400s on rule
-  violations — `apps/api/src/__tests__/app.test.ts`)
-
-### Determinism guarantees
-
-- `project(events, asOf)` is pure: given the same events and the same `asOf`,
-  it always returns the same state. The only piece of real-world input it
-  needs — current time, for deriving overdue invoices — is an explicit
-  parameter, never read internally via `Date.now()`. The real clock is read
-  exactly once, at the edge, in `replay.ts`.
-- Events are sorted into canonical order (global sequence) before folding, so
-  the order they are loaded in cannot change the result (ordering invariance).
-- Projections never read wall-clock columns (`recorded_at`); domain time
-  (`occurred_at`) is part of the event data and stable across replays.
-- The event log is immutable: a DB trigger rejects `UPDATE`/`DELETE`.
-
-## Getting started
-
-Requires Node ≥ 20, pnpm, and a local Postgres.
+Requires Node ≥ 20, pnpm, and a local Postgres server.
 
 ```bash
-cp .env.example .env          # adjust connection strings if needed
+cp .env.example .env          # adjust connection strings if your Postgres differs
 createdb businessos
 createdb businessos_test
 pnpm install
-pnpm migrate                  # apply migrations to DATABASE_URL
-pnpm test                     # runs the kernel test suite
-pnpm demo                     # walk through customer + invoice lifecycle by hand
-pnpm dev:api                  # http://localhost:3001
+pnpm migrate                  # applies infrastructure/migrations/ to DATABASE_URL
+pnpm test                     # 105 tests across kernel / accounting-se / workflows / api
+pnpm demo                     # walks through a customer + invoice lifecycle by hand, prints state
+pnpm dev:api                  # starts the HTTP API on http://localhost:3001
 ```
+
+`pnpm test` and `pnpm dev:api` both need Postgres running and migrated first.
+
+## Using the HTTP API (for a UI)
+
+All endpoints are company-scoped: every request needs a `companyId` (a
+free-form string/uuid you choose — there's no signup flow, a company is just
+whatever id you first use to create data under). `GET` routes take it as a
+query param; `POST` routes take it in the JSON body.
+
+Money amounts are always integers in **minor currency units** (e.g. öre, not
+kronor) to avoid floating-point rounding — `100000` means 1 000.00 SEK.
+
+### Customers & suppliers
+
+```
+POST /customers          { companyId, name, email? }              -> { customerId }
+GET  /customers?companyId=...                                      -> Customer[]
+POST /suppliers           { companyId, name, email? }              -> { supplierId }
+```
+
+### Invoices — accounts receivable (`draft → sent → partially_paid/paid`)
+
+```
+POST /invoices            { companyId, customerId, amount, currency?, dueDate } -> { invoiceId }
+GET  /invoices?companyId=...                                        -> Invoice[]
+POST /invoices/:id/send   { companyId }                             -> { invoiceId, status }
+POST /payments             { companyId, invoiceId, amount }          -> Invoice
+```
+
+`status` on a returned invoice may be `"overdue"` — this is computed at read
+time (never stored) whenever a sent-but-unpaid invoice's `dueDate` has passed.
+
+### Bills — accounts payable (`received → approved → partially_paid/paid`)
+
+```
+POST /bills                { companyId, supplierId, amount, currency?, dueDate } -> { billId }
+GET  /bills?companyId=...                                          -> Bill[]
+POST /bills/:id/approve    { companyId }                            -> { billId, status }
+POST /bill-payments         { companyId, billId, amount }            -> Bill
+```
+
+### Accounting (Swedish/BAS)
+
+```
+POST /accounting/verifications         { companyId, series, date, description, rows, sourceEventId? } -> { verificationId, number }
+POST /accounting/fiscal-years          { companyId, startDate, endDate }        -> { fiscalYearId }
+POST /accounting/fiscal-years/:id/close { companyId }                           -> { fiscalYearId, closed }
+GET  /accounting/trial-balance?companyId=...
+GET  /accounting/income-statement?companyId=...
+GET  /accounting/balance-sheet?companyId=...
+GET  /accounting/vat-report?companyId=...&periodStart=...&periodEnd=...
+GET  /accounting/sie?companyId=...&fiscalYearId=...&orgNumber=...&name=...     -> text/plain SIE4 file
+```
+
+Postings are never automatic — `POST /accounting/verifications` is how
+something becomes a ledger entry. Nothing in `/invoices` or `/payments`
+touches the ledger by itself (yet).
+
+### Workflows & tasks (read-only for now)
+
+```
+GET /workflows?companyId=...   -> WorkflowInstance[]
+GET /tasks?companyId=...        -> Task[]
+```
+
+Creating an invoice, sending it, and paying it automatically drives the
+built-in `invoice-workflow` (see `packages/workflows/src/definitions.ts`):
+`InvoiceCreated` starts it and creates a `SendInvoiceTask`; `InvoiceSent`
+advances it and creates a `MonitorPaymentTask`; `PaymentRegistered` completes
+it. A UI can poll these two endpoints to show task/workflow status — there's
+no task-execution UI wiring yet (no `PATCH /tasks/:id`), since nothing in this
+repo executes tasks yet.
+
+### Everything at once
+
+```
+GET /state?companyId=...   -> { customers, suppliers, invoices, payments, bills, billPayments }
+```
+
+### Errors
+
+Every error response is `{ "error": "<message>" }`.
+- `400` — bad/missing input, or a business rule was violated (e.g. "payment
+  exceeds remaining balance"). The message is the exact error the kernel/module
+  threw — safe to show directly in a UI.
+- `404` — referenced an id (invoice, bill, fiscal year) that doesn't exist for
+  that `companyId`.
+
+## Determinism guarantees (why you can trust replay)
+
+- Every projection is a pure function: same events (+ same `asOf` time, where
+  relevant) in, same state out. No projection reads `Date.now()` internally —
+  wherever "now" matters (e.g. deriving `overdue`), it's an explicit parameter
+  read once at the edge (`replay.ts`), not hidden inside the fold.
+- Events are sorted into canonical order (a global, monotonically increasing
+  sequence number) before folding, so the order they happen to be fetched in
+  can never change the result.
+- The event log is immutable at the database level — a Postgres trigger
+  rejects `UPDATE`/`DELETE` on the `events` table outright. Corrections are
+  always new events (e.g. a reversing accounting verification), never edits.
 
 ## Repo layout
 
 ```
-packages/kernel/                    the deterministic core + business domain (M1 + M2)
-packages/modules/accounting-se/     Swedish accounting module (M3) — reuses the kernel's event store
-packages/workflows/                 deterministic workflow + task engine (M4) — reuses the kernel's event store
-apps/api/                           thin HTTP layer over the kernel + modules, no business logic
+packages/kernel/                    event store, command/projection/replay core + business domain
+packages/modules/accounting-se/     Swedish accounting module — reuses the kernel's event store
+packages/workflows/                 deterministic workflow + task engine — reuses the kernel's event store
+apps/api/                           HTTP API over the kernel + modules — what a UI talks to
 infrastructure/migrations/          raw SQL migrations
 ```
 
-See the milestone plan for what comes next (M5 execution agents).
+## Roadmap
+
+Built in this order, each proven with its own test suite before the next
+started:
+
+1. ✅ Deterministic kernel (event store, command→event pipeline, projection, replay)
+2. ✅ Business domain core (customers, suppliers, invoices, bills, payments)
+3. ✅ Swedish accounting module (BAS, double-entry, VAT, SIE4)
+4. ✅ Deterministic workflow + task engine
+5. ⬜ Execution agents (the layer that actually *does* things — bank/BankID/email — driven by tasks this repo already creates)
+
+A UI is being built as a separate project against the API described above.

@@ -1,9 +1,9 @@
 {
-  "name": "businessos",
+  "name": "businessos-core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "BusinessOS — deterministic event-sourced kernel with pluggable business modules.",
+  "description": "businessos-core — deterministic event-sourced kernel with pluggable business modules. Backend for a separately-built UI.",
   "scripts": {
     "test": "pnpm -r --workspace-concurrency=1 test",
     "typecheck": "pnpm -r typecheck",
