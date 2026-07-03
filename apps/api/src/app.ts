@@ -1,0 +1,176 @@
+/**
+ * Milestone 2 — minimal HTTP surface over the kernel.
+ *
+ * Thin and deliberately dumb: every route does input parsing -> load any
+ * state a command needs -> call the command -> append -> respond with the
+ * freshly replayed state. No business logic lives here; it all lives in
+ * @businessos/kernel. This is a visualization/integration layer, not a
+ * second copy of the domain.
+ */
+
+import express, { type Request, type Response, type NextFunction } from "express";
+import {
+  EventStore,
+  replayCompany,
+  createCustomer,
+  createSupplier,
+  createInvoice,
+  sendInvoice,
+  registerPayment,
+  receiveBill,
+  approveBill,
+  registerBillPayment,
+  defaultDeps,
+  type Pool,
+} from "@businessos/kernel";
+
+export function createApp(pool: Pool): express.Express {
+  const store = new EventStore(pool);
+  const deps = defaultDeps();
+  const app = express();
+  app.use(express.json());
+
+  function requireCompanyId(value: unknown): string {
+    if (typeof value !== "string" || value.trim() === "") {
+      throw new HttpError(400, "companyId is required");
+    }
+    return value;
+  }
+
+  app.post("/customers", asyncRoute(async (req, res) => {
+    const { companyId, name, email } = req.body ?? {};
+    const draft = createCustomer({ companyId: requireCompanyId(companyId), name, email }, deps);
+    await store.append([draft]);
+    res.status(201).json({ customerId: draft.payload.customerId });
+  }));
+
+  app.get("/customers", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const state = await replayCompany(store, companyId);
+    res.json(state.customers);
+  }));
+
+  app.post("/suppliers", asyncRoute(async (req, res) => {
+    const { companyId, name, email } = req.body ?? {};
+    const draft = createSupplier({ companyId: requireCompanyId(companyId), name, email }, deps);
+    await store.append([draft]);
+    res.status(201).json({ supplierId: draft.payload.supplierId });
+  }));
+
+  app.post("/invoices", asyncRoute(async (req, res) => {
+    const { companyId, customerId, amount, currency, dueDate } = req.body ?? {};
+    const draft = createInvoice(
+      { companyId: requireCompanyId(companyId), customerId, amount, currency, dueDate },
+      deps,
+    );
+    await store.append([draft]);
+    res.status(201).json({ invoiceId: draft.payload.invoiceId });
+  }));
+
+  app.get("/invoices", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const state = await replayCompany(store, companyId);
+    res.json(state.invoices);
+  }));
+
+  app.post("/invoices/:id/send", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.body?.companyId);
+    const state = await replayCompany(store, companyId);
+    const invoice = state.invoices.find((i) => i.id === req.params["id"]);
+    if (!invoice) throw new HttpError(404, "invoice not found");
+
+    const draft = sendInvoice(invoice, { companyId }, deps);
+    await store.append([draft]);
+    res.status(200).json({ invoiceId: invoice.id, status: "sent" });
+  }));
+
+  app.post("/payments", asyncRoute(async (req, res) => {
+    const { companyId, invoiceId, amount } = req.body ?? {};
+    const company = requireCompanyId(companyId);
+    const state = await replayCompany(store, company);
+    const invoice = state.invoices.find((i) => i.id === invoiceId);
+    if (!invoice) throw new HttpError(404, "invoice not found");
+
+    const draft = registerPayment(invoice, { companyId: company, amount }, deps);
+    await store.append([draft]);
+    const after = await replayCompany(store, company);
+    res.status(201).json(after.invoices.find((i) => i.id === invoiceId));
+  }));
+
+  app.post("/bills", asyncRoute(async (req, res) => {
+    const { companyId, supplierId, amount, currency, dueDate } = req.body ?? {};
+    const draft = receiveBill(
+      { companyId: requireCompanyId(companyId), supplierId, amount, currency, dueDate },
+      deps,
+    );
+    await store.append([draft]);
+    res.status(201).json({ billId: draft.payload.billId });
+  }));
+
+  app.get("/bills", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const state = await replayCompany(store, companyId);
+    res.json(state.bills);
+  }));
+
+  app.post("/bills/:id/approve", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.body?.companyId);
+    const state = await replayCompany(store, companyId);
+    const bill = state.bills.find((b) => b.id === req.params["id"]);
+    if (!bill) throw new HttpError(404, "bill not found");
+
+    const draft = approveBill(bill, { companyId }, deps);
+    await store.append([draft]);
+    res.status(200).json({ billId: bill.id, status: "approved" });
+  }));
+
+  app.post("/bill-payments", asyncRoute(async (req, res) => {
+    const { companyId, billId, amount } = req.body ?? {};
+    const company = requireCompanyId(companyId);
+    const state = await replayCompany(store, company);
+    const bill = state.bills.find((b) => b.id === billId);
+    if (!bill) throw new HttpError(404, "bill not found");
+
+    const draft = registerBillPayment(bill, { companyId: company, amount }, deps);
+    await store.append([draft]);
+    const after = await replayCompany(store, company);
+    res.status(201).json(after.bills.find((b) => b.id === billId));
+  }));
+
+  app.get("/state", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    res.json(await replayCompany(store, companyId));
+  }));
+
+  app.use(errorHandler);
+  return app;
+}
+
+class HttpError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+  }
+}
+
+/** Wrap an async Express handler so rejected promises reach the error handler. */
+function asyncRoute(
+  handler: (req: Request, res: Response) => Promise<void>,
+): (req: Request, res: Response, next: NextFunction) => void {
+  return (req, res, next) => {
+    handler(req, res).catch(next);
+  };
+}
+
+function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
+  if (err instanceof HttpError) {
+    res.status(err.status).json({ error: err.message });
+    return;
+  }
+  if (err instanceof Error) {
+    // Command validation errors (bad amount, wrong invoice status, etc.) are
+    // thrown as plain Errors by the kernel — treat them as client errors.
+    res.status(400).json({ error: err.message });
+    return;
+  }
+  res.status(500).json({ error: "internal error" });
+}

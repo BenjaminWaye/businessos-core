@@ -1,0 +1,21 @@
+{
+  "name": "businessos",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "BusinessOS — deterministic event-sourced kernel with pluggable business modules.",
+  "scripts": {
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "migrate": "pnpm --filter @businessos/kernel migrate",
+    "demo": "pnpm --filter @businessos/kernel demo",
+    "dev:api": "pnpm --filter @businessos/api dev",
+    "migrate:test": "DATABASE_URL=$DATABASE_URL_TEST pnpm --filter @businessos/kernel migrate"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}
