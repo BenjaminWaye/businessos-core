@@ -5,11 +5,51 @@ A deterministic, event-sourced operating system for running a business: a stable
 deterministic **workflows**, and an external **execution layer** of agents that
 perform real-world actions. AI interprets — it never decides.
 
-## Status: Milestone 2 — Business Domain Core
+## Status: Milestone 3 — Swedish Accounting Module
 
-On top of the Milestone 1 kernel (event store, command pipeline, projection
-engine, replay — still no accounting module, workflows, or AI), the system now
-models real business objects:
+On top of the Milestone 1 kernel and Milestone 2 business domain, the first
+real **module** (`packages/modules/accounting-se`) lives entirely outside the
+kernel and the M2 domain, proving the plug-in architecture: it defines its own
+event types and projection, and reuses the *same* Postgres event log — the
+kernel never knows accounting exists.
+
+- **BAS chart of accounts** (curated subset: bank, receivables, payables,
+  input/output VAT, sales, purchases) — `accounts.ts`
+- **Verification** (verifikation): double-entry, `debit === credit` enforced
+  at command time, immutable once posted — corrections are a new *reversing*
+  verification (mirrored debit/credit), never an edit or delete
+- **Fiscal years**: `openFiscalYear` / `closeFiscalYear`; a closed year locks
+  every verification date within it — `createVerification` rejects postings
+  into a closed period
+- **Sequential voucher numbering** per series (e.g. `"A"`), computed from
+  current state the same way M2's `sendInvoice` validates against the current
+  `Invoice`
+- **Translator** (`translator.ts`): pure functions mapping M2 domain entities
+  (Invoice, Payment, Bill, BillPayment) to balanced verification drafts —
+  this is where "a business event MAY generate accounting entries, but the
+  kernel never generates accounting logic" actually lives. Nothing is
+  auto-posted; the caller (API/demo) decides when to translate and post.
+- **Reports** (`reports.ts`), all pure functions over verifications: ledger,
+  trial balance, income statement, balance sheet, VAT report. The
+  accounting identity `assets = equity + liabilities + (revenue − costs)`
+  falls out automatically from every verification balancing — never
+  special-cased in the reports (see the reports test suite)
+- **SIE4 export** (MVP, not certified) — `sie.ts`
+- **HTTP API**: `POST /accounting/verifications /fiscal-years`,
+  `POST /accounting/fiscal-years/:id/close`, `GET /accounting/trial-balance
+  /income-statement /balance-sheet /vat-report /sie`
+- **Tests** — 33 tests: balanced-entry enforcement, reversal semantics, locked
+  periods, sequential numbering, VAT split exactness, the accounting
+  identity, and a DB-backed integration test proving M2 and M3 events coexist
+  in one log without either projection seeing the other's event types
+
+One clarification worth flagging: the original spec listed `FiscalYearClosed`
+but not an explicit "opened" event — `FiscalYearOpened` was added because a
+fiscal year has to exist before it can be closed or checked against.
+
+### Milestone 2 — Business Domain Core
+
+Real business objects on top of the kernel:
 
 - **Domain**: Customer, Supplier, Invoice, Payment (accounts receivable), Bill,
   BillPayment (accounts payable) (`packages/kernel/src/state.ts`)
@@ -70,11 +110,12 @@ pnpm dev:api                  # http://localhost:3001
 ## Repo layout
 
 ```
-packages/kernel/        the deterministic core + business domain (M1 + M2)
-apps/api/                thin HTTP layer over the kernel, no business logic
-infrastructure/migrations/  raw SQL migrations
-packages/{modules,workflows,...}   added in later milestones
+packages/kernel/                    the deterministic core + business domain (M1 + M2)
+packages/modules/accounting-se/     Swedish accounting module (M3) — reuses the kernel's event store
+apps/api/                           thin HTTP layer over the kernel + modules, no business logic
+infrastructure/migrations/          raw SQL migrations
+packages/{workflows,...}            added in later milestones
 ```
 
-See the milestone plan for what comes next (M3 Swedish accounting → M4
-workflows → M5 execution agents).
+See the milestone plan for what comes next (M4 workflow engine → M5 execution
+agents).

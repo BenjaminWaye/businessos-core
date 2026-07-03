@@ -23,10 +23,23 @@ import {
   defaultDeps,
   type Pool,
 } from "@businessos/kernel";
+import {
+  replayAccounting,
+  createVerification,
+  openFiscalYear,
+  closeFiscalYear,
+  trialBalance,
+  incomeStatement,
+  balanceSheet,
+  computeVatReport,
+  exportSie4,
+  defaultDeps as accountingDefaultDeps,
+} from "@businessos/accounting-se";
 
 export function createApp(pool: Pool): express.Express {
   const store = new EventStore(pool);
   const deps = defaultDeps();
+  const accountingDeps = accountingDefaultDeps();
   const app = express();
   app.use(express.json());
 
@@ -135,6 +148,82 @@ export function createApp(pool: Pool): express.Express {
     await store.append([draft]);
     const after = await replayCompany(store, company);
     res.status(201).json(after.bills.find((b) => b.id === billId));
+  }));
+
+  app.post("/accounting/verifications", asyncRoute(async (req, res) => {
+    const { companyId, series, date, description, rows, sourceEventId } = req.body ?? {};
+    const company = requireCompanyId(companyId);
+    const accounting = await replayAccounting(store, company);
+    const draft = createVerification(
+      accounting,
+      { companyId: company, series, date, description, rows, sourceEventId },
+      accountingDeps,
+    );
+    await store.append([draft]);
+    res.status(201).json({ verificationId: draft.payload.verificationId, number: draft.payload.number });
+  }));
+
+  app.post("/accounting/fiscal-years", asyncRoute(async (req, res) => {
+    const { companyId, startDate, endDate } = req.body ?? {};
+    const company = requireCompanyId(companyId);
+    const accounting = await replayAccounting(store, company);
+    const draft = openFiscalYear(accounting, { companyId: company, startDate, endDate }, accountingDeps);
+    await store.append([draft]);
+    res.status(201).json({ fiscalYearId: draft.payload.fiscalYearId });
+  }));
+
+  app.post("/accounting/fiscal-years/:id/close", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.body?.companyId);
+    const accounting = await replayAccounting(store, companyId);
+    const fiscalYear = accounting.fiscalYears.find((f) => f.id === req.params["id"]);
+    if (!fiscalYear) throw new HttpError(404, "fiscal year not found");
+
+    const draft = closeFiscalYear(fiscalYear, { companyId }, accountingDeps);
+    await store.append([draft]);
+    res.status(200).json({ fiscalYearId: fiscalYear.id, closed: true });
+  }));
+
+  app.get("/accounting/trial-balance", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const accounting = await replayAccounting(store, companyId);
+    res.json(trialBalance(accounting.verifications));
+  }));
+
+  app.get("/accounting/income-statement", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const accounting = await replayAccounting(store, companyId);
+    res.json(incomeStatement(accounting.verifications));
+  }));
+
+  app.get("/accounting/balance-sheet", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const accounting = await replayAccounting(store, companyId);
+    res.json(balanceSheet(accounting.verifications));
+  }));
+
+  app.get("/accounting/vat-report", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const periodStart = String(req.query["periodStart"] ?? "");
+    const periodEnd = String(req.query["periodEnd"] ?? "");
+    const accounting = await replayAccounting(store, companyId);
+    res.json(computeVatReport(accounting.verifications, periodStart, periodEnd));
+  }));
+
+  app.get("/accounting/sie", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const fiscalYearId = String(req.query["fiscalYearId"] ?? "");
+    const orgNumber = String(req.query["orgNumber"] ?? "");
+    const name = String(req.query["name"] ?? "");
+    const accounting = await replayAccounting(store, companyId);
+    const fiscalYear = accounting.fiscalYears.find((f) => f.id === fiscalYearId);
+    if (!fiscalYear) throw new HttpError(404, "fiscal year not found");
+
+    const text = exportSie4(
+      { orgNumber, name },
+      { startDate: fiscalYear.startDate, endDate: fiscalYear.endDate },
+      accounting.verifications,
+    );
+    res.type("text/plain").send(text);
   }));
 
   app.get("/state", asyncRoute(async (req, res) => {

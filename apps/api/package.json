@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@businessos/accounting-se": "workspace:*",
     "@businessos/kernel": "workspace:*",
     "express": "^4.21.1"
   },

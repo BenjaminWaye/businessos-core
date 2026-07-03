@@ -14,6 +14,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@businessos/accounting-se':
+        specifier: workspace:*
+        version: link:../../packages/modules/accounting-se
       '@businessos/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
@@ -61,6 +64,22 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.22.4
+      vitest:
+        specifier: ^2.1.5
+        version: 2.1.9(@types/node@22.20.0)
+
+  packages/modules/accounting-se:
+    dependencies:
+      '@businessos/kernel':
+        specifier: workspace:*
+        version: link:../../kernel
+    devDependencies:
+      '@types/node':
+        specifier: ^22.9.0
+        version: 22.20.0
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
       vitest:
         specifier: ^2.1.5
         version: 2.1.9(@types/node@22.20.0)
