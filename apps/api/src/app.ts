@@ -24,6 +24,7 @@ import {
   type Pool,
 } from "@businessos/kernel";
 import {
+  BAS_ACCOUNTS,
   replayAccounting,
   createVerification,
   openFiscalYear,
@@ -162,6 +163,12 @@ export function createApp(pool: Pool): express.Express {
     await store.append([draft]);
     const after = await replayCompany(store, company);
     res.status(201).json(after.bills.find((b) => b.id === billId));
+  }));
+
+  app.get("/accounting/accounts", asyncRoute(async (_req, res) => {
+    // Static reference data (the curated BAS chart), not company-scoped —
+    // no companyId required, unlike every other route here.
+    res.json(BAS_ACCOUNTS);
   }));
 
   app.get("/accounting/verifications", asyncRoute(async (req, res) => {

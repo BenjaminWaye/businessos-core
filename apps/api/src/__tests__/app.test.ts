@@ -195,6 +195,18 @@ describe("GET /events", () => {
   });
 });
 
+describe("GET /accounting/accounts", () => {
+  it("returns the curated BAS chart, not company-scoped", async () => {
+    const res = await request(app).get("/accounting/accounts").expect(200);
+    expect(res.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "1930", name: "Företagskonto/bank", class: "asset" }),
+        expect.objectContaining({ code: "3001", class: "revenue" }),
+      ]),
+    );
+  });
+});
+
 describe("GET /accounting/verifications", () => {
   it("lists verifications posted for a company", async () => {
     const companyId = newCompanyId();
