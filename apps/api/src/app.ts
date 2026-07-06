@@ -226,19 +226,19 @@ export function createApp(pool: Pool): express.Express {
   app.get("/accounting/trial-balance", asyncRoute(async (req, res) => {
     const companyId = requireCompanyId(req.query["companyId"]);
     const accounting = await replayAccounting(store, companyId);
-    res.json(trialBalance(accounting.verifications));
+    res.json(trialBalance(accounting.verifications, accounting.customAccounts));
   }));
 
   app.get("/accounting/income-statement", asyncRoute(async (req, res) => {
     const companyId = requireCompanyId(req.query["companyId"]);
     const accounting = await replayAccounting(store, companyId);
-    res.json(incomeStatement(accounting.verifications));
+    res.json(incomeStatement(accounting.verifications, accounting.customAccounts));
   }));
 
   app.get("/accounting/balance-sheet", asyncRoute(async (req, res) => {
     const companyId = requireCompanyId(req.query["companyId"]);
     const accounting = await replayAccounting(store, companyId);
-    res.json(balanceSheet(accounting.verifications));
+    res.json(balanceSheet(accounting.verifications, accounting.customAccounts));
   }));
 
   app.get("/accounting/vat-report", asyncRoute(async (req, res) => {

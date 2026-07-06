@@ -117,3 +117,28 @@ describe("computeVatReport", () => {
     expect(report).toEqual({ outputVat: 0, inputVat: 0, toPay: 0 });
   });
 });
+
+describe("ledger with custom accounts", () => {
+  const customAccounts = [{ code: "1931", name: "Savings account", class: "asset" as const, createdAt: "2026-01-01T00:00:00.000Z" }];
+  const withCustomAccount: Verification[] = [
+    v("1", "2026-02-01", [
+      { account: "1930", debit: 0, credit: 5000 },
+      { account: "1931", debit: 5000, credit: 0 },
+    ]),
+  ];
+
+  it("resolves a custom account's name when given the company's customAccounts", () => {
+    const lines = ledger(withCustomAccount, customAccounts);
+    expect(lines.find((l) => l.account === "1931")).toMatchObject({ name: "Savings account" });
+  });
+
+  it("falls back to the raw code without customAccounts", () => {
+    const lines = ledger(withCustomAccount);
+    expect(lines.find((l) => l.account === "1931")).toMatchObject({ name: "1931" });
+  });
+
+  it("classifies a custom asset account correctly in the balance sheet", () => {
+    const bs = balanceSheet(withCustomAccount, customAccounts);
+    expect(bs.assets).toEqual(expect.arrayContaining([expect.objectContaining({ account: "1931", name: "Savings account" })]));
+  });
+});

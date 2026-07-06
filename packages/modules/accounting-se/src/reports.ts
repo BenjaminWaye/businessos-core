@@ -13,8 +13,8 @@
  * right.
  */
 
-import { accountClass, findAccount } from "./accounts.js";
-import type { Verification } from "./types.js";
+import { accountClass, findAccountIn } from "./accounts.js";
+import type { CustomAccount, Verification } from "./types.js";
 
 export interface LedgerLine {
   account: string;
@@ -25,8 +25,14 @@ export interface LedgerLine {
   balance: number;
 }
 
-/** Per-account totals across a set of verifications, sorted by account code. */
-export function ledger(verifications: readonly Verification[]): LedgerLine[] {
+/**
+ * Per-account totals across a set of verifications, sorted by account code.
+ * `customAccounts` (a company's own additions, see `createAccount` in
+ * commands.ts) resolves names/classes for accounts outside the static BAS
+ * template — omit it and everything still works, just without friendly
+ * names for custom accounts.
+ */
+export function ledger(verifications: readonly Verification[], customAccounts: readonly CustomAccount[] = []): LedgerLine[] {
   const totals = new Map<string, { debit: number; credit: number }>();
   for (const v of verifications) {
     for (const row of v.rows) {
@@ -40,7 +46,7 @@ export function ledger(verifications: readonly Verification[]): LedgerLine[] {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([account, t]) => ({
       account,
-      name: findAccount(account)?.name ?? account,
+      name: findAccountIn(account, customAccounts)?.name ?? account,
       debit: t.debit,
       credit: t.credit,
       balance: t.debit - t.credit,
@@ -55,8 +61,8 @@ export interface TrialBalance {
 }
 
 /** Every account's balance, plus the debit/credit totals that must match. */
-export function trialBalance(verifications: readonly Verification[]): TrialBalance {
-  const lines = ledger(verifications);
+export function trialBalance(verifications: readonly Verification[], customAccounts: readonly CustomAccount[] = []): TrialBalance {
+  const lines = ledger(verifications, customAccounts);
   const totalDebit = lines.reduce((sum, l) => sum + l.debit, 0);
   const totalCredit = lines.reduce((sum, l) => sum + l.credit, 0);
   return { lines, totalDebit, totalCredit, balanced: totalDebit === totalCredit };
@@ -78,11 +84,11 @@ export interface IncomeStatement {
 }
 
 /** Revenue accounts (3xxx) are credit-normal; costs (4-7xxx) are debit-normal. */
-export function incomeStatement(verifications: readonly Verification[]): IncomeStatement {
+export function incomeStatement(verifications: readonly Verification[], customAccounts: readonly CustomAccount[] = []): IncomeStatement {
   const revenue: FinancialReportLine[] = [];
   const costs: FinancialReportLine[] = [];
-  for (const line of ledger(verifications)) {
-    const cls = findAccount(line.account)?.class ?? accountClass(line.account);
+  for (const line of ledger(verifications, customAccounts)) {
+    const cls = findAccountIn(line.account, customAccounts)?.class ?? accountClass(line.account);
     if (cls === "revenue") revenue.push({ ...line, amount: -line.balance });
     else if (cls === "cost") costs.push({ ...line, amount: line.balance });
   }
@@ -105,11 +111,11 @@ export interface BalanceSheet {
  * (`result` from `incomeStatement`) always holds — direct consequence of
  * every verification balancing. Proven in the reports test suite.
  */
-export function balanceSheet(verifications: readonly Verification[]): BalanceSheet {
+export function balanceSheet(verifications: readonly Verification[], customAccounts: readonly CustomAccount[] = []): BalanceSheet {
   const assets: FinancialReportLine[] = [];
   const equityAndLiabilities: FinancialReportLine[] = [];
-  for (const line of ledger(verifications)) {
-    const cls = findAccount(line.account)?.class ?? accountClass(line.account);
+  for (const line of ledger(verifications, customAccounts)) {
+    const cls = findAccountIn(line.account, customAccounts)?.class ?? accountClass(line.account);
     if (cls === "asset") assets.push({ ...line, amount: line.balance });
     else if (cls === "equity_liability") {
       equityAndLiabilities.push({ ...line, amount: -line.balance });
