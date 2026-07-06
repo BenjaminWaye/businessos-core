@@ -97,7 +97,8 @@ POST /bill-payments         { companyId, billId, amount }            -> Bill
 ### Accounting (Swedish/BAS)
 
 ```
-GET  /accounting/accounts                                                       -> BasAccount[] (curated chart; not company-scoped, no companyId needed)
+GET  /accounting/accounts?companyId=...                                        -> BasAccount[] (curated BAS template + this company's own custom accounts)
+POST /accounting/accounts              { companyId, code, name, class }         -> { accountId, code } (adds a custom account to this company's chart)
 POST /accounting/verifications         { companyId, series, date, description, rows, sourceEventId? } -> { verificationId, number }
 GET  /accounting/verifications?companyId=...                                    -> Verification[]
 POST /accounting/fiscal-years          { companyId, startDate, endDate }        -> { fiscalYearId }

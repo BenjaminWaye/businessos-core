@@ -27,6 +27,7 @@ import {
   BAS_ACCOUNTS,
   replayAccounting,
   createVerification,
+  createAccount,
   openFiscalYear,
   closeFiscalYear,
   trialBalance,
@@ -165,10 +166,22 @@ export function createApp(pool: Pool): express.Express {
     res.status(201).json(after.bills.find((b) => b.id === billId));
   }));
 
-  app.get("/accounting/accounts", asyncRoute(async (_req, res) => {
-    // Static reference data (the curated BAS chart), not company-scoped —
-    // no companyId required, unlike every other route here.
-    res.json(BAS_ACCOUNTS);
+  app.get("/accounting/accounts", asyncRoute(async (req, res) => {
+    // The static BAS template plus whatever this company has added itself
+    // (see POST below) -- company-scoped like every other route, since the
+    // custom half of the chart genuinely differs per company.
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const accounting = await replayAccounting(store, companyId);
+    res.json([...BAS_ACCOUNTS, ...accounting.customAccounts]);
+  }));
+
+  app.post("/accounting/accounts", asyncRoute(async (req, res) => {
+    const { companyId, code, name, class: accountClass } = req.body ?? {};
+    const company = requireCompanyId(companyId);
+    const accounting = await replayAccounting(store, company);
+    const draft = createAccount(accounting, { companyId: company, code, name, class: accountClass }, accountingDeps);
+    await store.append([draft]);
+    res.status(201).json({ accountId: draft.payload.accountId, code: draft.payload.code });
   }));
 
   app.get("/accounting/verifications", asyncRoute(async (req, res) => {

@@ -196,14 +196,96 @@ describe("GET /events", () => {
 });
 
 describe("GET /accounting/accounts", () => {
-  it("returns the curated BAS chart, not company-scoped", async () => {
-    const res = await request(app).get("/accounting/accounts").expect(200);
+  it("returns the curated BAS chart for a company with no custom accounts yet", async () => {
+    const companyId = newCompanyId();
+    const res = await request(app).get("/accounting/accounts").query({ companyId }).expect(200);
     expect(res.body).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: "1930", name: "Företagskonto/bank", class: "asset" }),
         expect.objectContaining({ code: "3001", class: "revenue" }),
       ]),
     );
+  });
+
+  it("includes a company's own custom accounts alongside the BAS template", async () => {
+    const companyId = newCompanyId();
+    await request(app)
+      .post("/accounting/accounts")
+      .send({ companyId, code: "1931", name: "Savings account", class: "asset" })
+      .expect(201);
+
+    const res = await request(app).get("/accounting/accounts").query({ companyId }).expect(200);
+    expect(res.body).toEqual(expect.arrayContaining([expect.objectContaining({ code: "1931", name: "Savings account", class: "asset" })]));
+  });
+
+  it("doesn't leak one company's custom accounts into another's", async () => {
+    const companyA = newCompanyId();
+    const companyB = newCompanyId();
+    await request(app)
+      .post("/accounting/accounts")
+      .send({ companyId: companyA, code: "1931", name: "Company A's savings", class: "asset" })
+      .expect(201);
+
+    const res = await request(app).get("/accounting/accounts").query({ companyId: companyB }).expect(200);
+    expect(res.body).not.toEqual(expect.arrayContaining([expect.objectContaining({ code: "1931" })]));
+  });
+});
+
+describe("POST /accounting/accounts", () => {
+  it("rejects a code that already exists in the BAS template", async () => {
+    const companyId = newCompanyId();
+    const res = await request(app)
+      .post("/accounting/accounts")
+      .send({ companyId, code: "1930", name: "Duplicate", class: "asset" })
+      .expect(400);
+    expect(res.body.error).toMatch(/already exists/);
+  });
+
+  it("rejects a malformed code", async () => {
+    const companyId = newCompanyId();
+    const res = await request(app)
+      .post("/accounting/accounts")
+      .send({ companyId, code: "abc", name: "Bad code", class: "asset" })
+      .expect(400);
+    expect(res.body.error).toMatch(/4-digit/);
+  });
+
+  it("lets a verification post against a newly created custom account", async () => {
+    const companyId = newCompanyId();
+    await request(app)
+      .post("/accounting/accounts")
+      .send({ companyId, code: "1931", name: "Savings account", class: "asset" })
+      .expect(201);
+
+    await request(app)
+      .post("/accounting/verifications")
+      .send({
+        companyId,
+        date: "2024-01-01",
+        description: "Transfer to savings",
+        rows: [
+          { account: "1930", debit: 0, credit: 10000 },
+          { account: "1931", debit: 10000, credit: 0 },
+        ],
+      })
+      .expect(201);
+  });
+
+  it("still rejects a verification against an account that was never created", async () => {
+    const companyId = newCompanyId();
+    const res = await request(app)
+      .post("/accounting/verifications")
+      .send({
+        companyId,
+        date: "2024-01-01",
+        description: "Transfer to savings",
+        rows: [
+          { account: "1930", debit: 0, credit: 10000 },
+          { account: "1932", debit: 10000, credit: 0 },
+        ],
+      })
+      .expect(400);
+    expect(res.body.error).toMatch(/unknown account/);
   });
 });
 

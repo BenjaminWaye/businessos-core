@@ -71,7 +71,7 @@ describe("createVerification", () => {
     ).toThrow(/unbalanced/);
   });
 
-  it("rejects an unknown BAS account", () => {
+  it("rejects an unknown account", () => {
     expect(() =>
       createVerification(
         initialAccountingState(),
@@ -86,7 +86,7 @@ describe("createVerification", () => {
         },
         fixedDeps(),
       ),
-    ).toThrow(/unknown BAS account/);
+    ).toThrow(/unknown account/);
   });
 
   it("rejects a row with both debit and credit set", () => {

@@ -11,8 +11,9 @@
 
 import { randomUUID } from "node:crypto";
 import type { EventDraft } from "@businessos/kernel";
-import { findAccount } from "./accounts.js";
+import { findAccountIn, type AccountClass } from "./accounts.js";
 import type {
+  AccountCreated,
   AccountingState,
   FiscalYear,
   FiscalYearClosed,
@@ -39,16 +40,16 @@ function nextVoucherNumber(state: AccountingState, series: string): number {
   return numbers.length === 0 ? 1 : Math.max(...numbers) + 1;
 }
 
-/** Debit = credit, every row references a real account, amounts are sane. */
-function assertBalanced(rows: readonly VerificationRow[]): void {
+/** Debit = credit, every row references a real account (the BAS template or one the company added itself), amounts are sane. */
+function assertBalanced(rows: readonly VerificationRow[], state: AccountingState): void {
   if (rows.length < 2) {
     throw new Error("createVerification: at least two rows are required");
   }
   let debitSum = 0;
   let creditSum = 0;
   for (const row of rows) {
-    if (!findAccount(row.account)) {
-      throw new Error(`createVerification: unknown BAS account "${row.account}"`);
+    if (!findAccountIn(row.account, state.customAccounts)) {
+      throw new Error(`createVerification: unknown account "${row.account}" — add it first via createAccount`);
     }
     if (
       !Number.isInteger(row.debit) ||
@@ -107,7 +108,7 @@ export function createVerification(
   if (!input.description.trim()) {
     throw new Error("createVerification: description is required");
   }
-  assertBalanced(input.rows);
+  assertBalanced(input.rows, state);
   assertPeriodOpen(state, input.date);
 
   return {
@@ -175,6 +176,56 @@ export function reverseVerification(
         `Reversal of ${verification.series}${verification.number}: ${verification.description}`,
       rows,
     },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Custom accounts — a company's own additions to the static BAS template
+// ---------------------------------------------------------------------------
+
+const ACCOUNT_CODE_PATTERN = /^[1-8]\d{3}$/;
+const ACCOUNT_CLASSES: readonly AccountClass[] = ["asset", "equity_liability", "revenue", "cost", "financial"];
+
+export interface CreateAccountInput {
+  companyId: string;
+  code: string;
+  name: string;
+  class: AccountClass;
+}
+
+/**
+ * CreateAccount -> AccountCreated. The static BAS_ACCOUNTS list is a
+ * template every company starts from, not the ceiling of what they can
+ * post to — real bookkeeping means being able to add accounts (a second
+ * bank account, a new cost category) the template doesn't happen to name.
+ * Rejects codes that already exist (in the template or the company's own
+ * list) so two accounts never silently collide on one code.
+ */
+export function createAccount(
+  state: AccountingState,
+  input: CreateAccountInput,
+  deps: CommandDeps,
+): EventDraft<AccountCreated> {
+  const code = input.code.trim();
+  if (!ACCOUNT_CODE_PATTERN.test(code)) {
+    throw new Error(`createAccount: code "${code}" must be a 4-digit BAS-style code starting with 1-8`);
+  }
+  if (!input.name.trim()) {
+    throw new Error("createAccount: name is required");
+  }
+  if (!ACCOUNT_CLASSES.includes(input.class)) {
+    throw new Error(`createAccount: unknown class "${input.class}"`);
+  }
+  if (findAccountIn(code, state.customAccounts)) {
+    throw new Error(`createAccount: account "${code}" already exists`);
+  }
+
+  return {
+    id: deps.newId(),
+    companyId: input.companyId,
+    type: "AccountCreated",
+    occurredAt: deps.now(),
+    payload: { accountId: deps.newId(), code, name: input.name.trim(), class: input.class },
   };
 }
 

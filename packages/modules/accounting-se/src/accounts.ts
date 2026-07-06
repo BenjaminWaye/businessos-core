@@ -4,12 +4,12 @@
  * A curated subset of the real BAS 2025 standard, covering the accounts a
  * typical small company posts against day to day (bank/cash, receivables/
  * payables, common revenue and cost categories, VAT, payroll, equity). Not
- * the full ~300-account chart; a real company's chart of accounts would be
- * configured, not hardcoded, but this covers common bookkeeping without
- * requiring every company to know obscure codes. This is a lookup table for
- * display (name/classification) only — `createVerification` accepts any
- * account code string; codes outside this list still post fine, just
- * without a friendly name in reports (see `findAccount`/`accountClass`).
+ * the full ~300-account chart — every company starts from this template, but
+ * a real chart of accounts also includes whatever the company has added
+ * itself (a second bank account, a new cost category): see `createAccount`
+ * in commands.ts and `AccountingState.customAccounts`. `createVerification`
+ * validates every row's account against the template *plus* the company's
+ * own accounts (`findAccountIn`) and rejects anything in neither.
  *
  * BAS account numbers are structured by leading digit:
  *   1xxx assets, 2xxx equity & liabilities, 3xxx revenue, 4-7xxx costs,
@@ -107,6 +107,16 @@ export const BAS_ACCOUNTS: readonly BasAccount[] = [
 
 export function findAccount(code: string): BasAccount | undefined {
   return BAS_ACCOUNTS.find((a) => a.code === code);
+}
+
+/**
+ * Looks up a code against the static BAS template first, then a company's
+ * own custom accounts (see `AccountingState.customAccounts` / `createAccount`
+ * in commands.ts) — a real chart of accounts is the template plus whatever a
+ * company has added on top, not the template alone.
+ */
+export function findAccountIn(code: string, customAccounts: readonly BasAccount[]): BasAccount | undefined {
+  return findAccount(code) ?? customAccounts.find((a) => a.code === code);
 }
 
 /** Classify a code by its leading digit even if it's outside the curated subset. */

@@ -70,6 +70,26 @@ export interface VerificationReversed {
 }
 
 // ---------------------------------------------------------------------------
+// Custom accounts — a company's own additions to the static BAS template
+// ---------------------------------------------------------------------------
+
+import type { AccountClass } from "./accounts.js";
+
+export interface CustomAccount {
+  code: string;
+  name: string;
+  class: AccountClass;
+  createdAt: string;
+}
+
+export interface AccountCreated {
+  accountId: string;
+  code: string;
+  name: string;
+  class: AccountClass;
+}
+
+// ---------------------------------------------------------------------------
 // Fiscal year
 // ---------------------------------------------------------------------------
 
@@ -134,10 +154,12 @@ export interface AccountingState {
   fiscalYears: FiscalYear[];
   vatReports: VatReportRecord[];
   sieExports: SieExportRecord[];
+  /** A company's own additions to the static BAS template (see accounts.ts). */
+  customAccounts: CustomAccount[];
 }
 
 export function initialAccountingState(): AccountingState {
-  return { verifications: [], fiscalYears: [], vatReports: [], sieExports: [] };
+  return { verifications: [], fiscalYears: [], vatReports: [], sieExports: [], customAccounts: [] };
 }
 
 export interface AccountingEventMap {
@@ -147,6 +169,7 @@ export interface AccountingEventMap {
   FiscalYearClosed: FiscalYearClosed;
   VatReportGenerated: VatReportGenerated;
   SieExported: SieExported;
+  AccountCreated: AccountCreated;
 }
 
 export type AccountingEventType = keyof AccountingEventMap;

@@ -7,7 +7,7 @@
  * has no idea this module exists.
  */
 
-export { BAS_ACCOUNTS, findAccount, accountClass } from "./accounts.js";
+export { BAS_ACCOUNTS, findAccount, findAccountIn, accountClass } from "./accounts.js";
 export type { AccountClass, BasAccount } from "./accounts.js";
 
 export type {
@@ -22,6 +22,8 @@ export type {
   VatReportGenerated,
   SieExportRecord,
   SieExported,
+  CustomAccount,
+  AccountCreated,
   AccountingState,
   AccountingEventMap,
   AccountingEventType,
@@ -39,6 +41,7 @@ export type {
   CloseFiscalYearInput,
   RecordVatReportInput,
   RecordSieExportInput,
+  CreateAccountInput,
 } from "./commands.js";
 export {
   defaultDeps,
@@ -48,6 +51,7 @@ export {
   closeFiscalYear,
   recordVatReport,
   recordSieExport,
+  createAccount,
 } from "./commands.js";
 
 export type { LedgerLine, TrialBalance, FinancialReportLine, IncomeStatement, BalanceSheet, VatReportComputed } from "./reports.js";

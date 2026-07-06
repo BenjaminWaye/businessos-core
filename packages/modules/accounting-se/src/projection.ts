@@ -15,6 +15,7 @@
 import { compareEvents, type StoredEvent } from "@businessos/kernel";
 import {
   initialAccountingState,
+  type AccountCreated,
   type AccountingState,
   type FiscalYearClosed,
   type FiscalYearOpened,
@@ -124,6 +125,17 @@ function apply(state: AccountingState, event: StoredEvent): AccountingState {
         sieExports: [
           ...state.sieExports,
           { id: p.exportId, fiscalYearId: p.fiscalYearId, generatedAt: event.occurredAt },
+        ],
+      };
+    }
+
+    case "AccountCreated": {
+      const p = event.payload as AccountCreated;
+      return {
+        ...state,
+        customAccounts: [
+          ...state.customAccounts,
+          { code: p.code, name: p.name, class: p.class, createdAt: event.occurredAt },
         ],
       };
     }
