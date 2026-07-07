@@ -101,6 +101,8 @@ GET  /accounting/accounts?companyId=...                                        -
 POST /accounting/accounts              { companyId, code, name, class }         -> { accountId, code } (adds a custom account to this company's chart)
 POST /accounting/verifications         { companyId, series, date, description, rows, sourceEventId? } -> { verificationId, number }
 GET  /accounting/verifications?companyId=...                                    -> Verification[]
+POST /accounting/verifications/:id/reverse { companyId, date, description? }    -> { verificationId, number } (mirrored reversing entry; never edits/deletes the original)
+GET  /accounting/fiscal-years?companyId=...                                    -> FiscalYear[]
 POST /accounting/fiscal-years          { companyId, startDate, endDate }        -> { fiscalYearId }
 POST /accounting/fiscal-years/:id/close { companyId }                           -> { fiscalYearId, closed }
 GET  /accounting/trial-balance?companyId=...

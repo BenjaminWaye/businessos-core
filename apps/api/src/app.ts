@@ -27,6 +27,7 @@ import {
   BAS_ACCOUNTS,
   replayAccounting,
   createVerification,
+  reverseVerification,
   createAccount,
   openFiscalYear,
   closeFiscalYear,
@@ -201,6 +202,24 @@ export function createApp(pool: Pool): express.Express {
     );
     await store.append([draft]);
     res.status(201).json({ verificationId: draft.payload.verificationId, number: draft.payload.number });
+  }));
+
+  app.post("/accounting/verifications/:id/reverse", asyncRoute(async (req, res) => {
+    const { companyId, date, description } = req.body ?? {};
+    const company = requireCompanyId(companyId);
+    const accounting = await replayAccounting(store, company);
+    const verification = accounting.verifications.find((v) => v.id === req.params["id"]);
+    if (!verification) throw new HttpError(404, "verification not found");
+
+    const draft = reverseVerification(accounting, verification, { companyId: company, date, description }, accountingDeps);
+    await store.append([draft]);
+    res.status(201).json({ verificationId: draft.payload.verificationId, number: draft.payload.number });
+  }));
+
+  app.get("/accounting/fiscal-years", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const accounting = await replayAccounting(store, companyId);
+    res.json(accounting.fiscalYears);
   }));
 
   app.post("/accounting/fiscal-years", asyncRoute(async (req, res) => {

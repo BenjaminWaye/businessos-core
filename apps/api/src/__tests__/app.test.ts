@@ -313,6 +313,74 @@ describe("GET /accounting/verifications", () => {
   });
 });
 
+describe("POST /accounting/verifications/:id/reverse", () => {
+  it("posts a mirrored reversal and marks the original as reversed", async () => {
+    const companyId = newCompanyId();
+    const created = await request(app)
+      .post("/accounting/verifications")
+      .send({
+        companyId,
+        date: "2026-01-15",
+        description: "Original entry",
+        rows: [
+          { account: "1930", debit: 1000, credit: 0 },
+          { account: "3001", debit: 0, credit: 1000 },
+        ],
+      })
+      .expect(201);
+
+    await request(app)
+      .post(`/accounting/verifications/${created.body.verificationId}/reverse`)
+      .send({ companyId, date: "2026-01-16" })
+      .expect(201);
+
+    const list = await request(app).get(`/accounting/verifications?companyId=${companyId}`).expect(200);
+    expect(list.body).toHaveLength(2);
+    expect(list.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: created.body.verificationId, reversed: true, reversedBy: expect.any(String) }),
+        expect.objectContaining({ description: expect.stringContaining("Reversal of") }),
+      ]),
+    );
+  });
+
+  it("404s for a verification that doesn't exist", async () => {
+    const companyId = newCompanyId();
+    await request(app)
+      .post(`/accounting/verifications/does-not-exist/reverse`)
+      .send({ companyId, date: "2026-01-16" })
+      .expect(404);
+  });
+});
+
+describe("GET /accounting/fiscal-years", () => {
+  it("lists fiscal years opened for a company", async () => {
+    const companyId = newCompanyId();
+    const opened = await request(app)
+      .post("/accounting/fiscal-years")
+      .send({ companyId, startDate: "2026-01-01", endDate: "2026-12-31" })
+      .expect(201);
+
+    const list = await request(app).get(`/accounting/fiscal-years?companyId=${companyId}`).expect(200);
+    expect(list.body).toEqual([expect.objectContaining({ id: opened.body.fiscalYearId, closed: false })]);
+  });
+
+  it("reflects a closed fiscal year", async () => {
+    const companyId = newCompanyId();
+    const opened = await request(app)
+      .post("/accounting/fiscal-years")
+      .send({ companyId, startDate: "2026-01-01", endDate: "2026-12-31" })
+      .expect(201);
+    await request(app)
+      .post(`/accounting/fiscal-years/${opened.body.fiscalYearId}/close`)
+      .send({ companyId })
+      .expect(200);
+
+    const list = await request(app).get(`/accounting/fiscal-years?companyId=${companyId}`).expect(200);
+    expect(list.body).toEqual([expect.objectContaining({ id: opened.body.fiscalYearId, closed: true })]);
+  });
+});
+
 describe("task actions", () => {
   async function seedTask(companyId: string) {
     const customer = await request(app).post("/customers").send({ companyId, name: "Ada" }).expect(201);
