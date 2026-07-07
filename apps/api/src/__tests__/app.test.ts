@@ -47,6 +47,22 @@ describe("customers", () => {
   });
 });
 
+describe("suppliers", () => {
+  it("POST /suppliers creates a supplier, GET /suppliers lists it", async () => {
+    const companyId = newCompanyId();
+    const created = await request(app)
+      .post("/suppliers")
+      .send({ companyId, name: "Acme Supplies", email: "billing@acme.test" })
+      .expect(201);
+    expect(created.body.supplierId).toEqual(expect.any(String));
+
+    const list = await request(app).get(`/suppliers?companyId=${companyId}`).expect(200);
+    expect(list.body).toEqual([
+      expect.objectContaining({ id: created.body.supplierId, name: "Acme Supplies" }),
+    ]);
+  });
+});
+
 describe("invoice lifecycle over HTTP", () => {
   it("create -> send -> partial payment -> full payment -> paid", async () => {
     const companyId = newCompanyId();

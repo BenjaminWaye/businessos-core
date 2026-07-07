@@ -71,6 +71,7 @@ kronor) to avoid floating-point rounding — `100000` means 1 000.00 SEK.
 POST /customers          { companyId, name, email? }              -> { customerId }
 GET  /customers?companyId=...                                      -> Customer[]
 POST /suppliers           { companyId, name, email? }              -> { supplierId }
+GET  /suppliers?companyId=...                                      -> Supplier[]
 ```
 
 ### Invoices — accounts receivable (`draft → sent → partially_paid/paid`)

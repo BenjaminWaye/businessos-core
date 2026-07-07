@@ -82,6 +82,12 @@ export function createApp(pool: Pool): express.Express {
     res.status(201).json({ supplierId: draft.payload.supplierId });
   }));
 
+  app.get("/suppliers", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const state = await replayCompany(store, companyId);
+    res.json(state.suppliers);
+  }));
+
   app.post("/invoices", asyncRoute(async (req, res) => {
     const { companyId, customerId, amount, currency, dueDate } = req.body ?? {};
     const draft = createInvoice(
