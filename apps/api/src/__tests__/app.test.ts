@@ -190,6 +190,63 @@ describe("bill lifecycle over HTTP", () => {
   });
 });
 
+describe("expense claim lifecycle over HTTP", () => {
+  it("submit -> approve -> reimburse -> reimbursed", async () => {
+    const companyId = newCompanyId();
+
+    const claim = await request(app)
+      .post("/expenses")
+      .send({ companyId, claimantName: "Ada Lovelace", description: "Conference travel", amount: 150000 })
+      .expect(201);
+    const expenseClaimId = claim.body.expenseClaimId;
+
+    await request(app)
+      .post(`/expenses/${expenseClaimId}/approve`)
+      .send({ companyId })
+      .expect(200)
+      .expect((res) => expect(res.body.status).toBe("approved"));
+
+    const reimbursed = await request(app)
+      .post("/expense-reimbursements")
+      .send({ companyId, expenseClaimId, amount: 150000 })
+      .expect(201);
+    expect(reimbursed.body).toMatchObject({ status: "reimbursed", amountReimbursed: 150000 });
+
+    const claims = await request(app).get(`/expenses?companyId=${companyId}`).expect(200);
+    expect(claims.body).toEqual([expect.objectContaining({ id: expenseClaimId, status: "reimbursed" })]);
+  });
+
+  it("approving an unknown claim is a 404", async () => {
+    const companyId = newCompanyId();
+    await request(app)
+      .post(`/expenses/00000000-0000-0000-0000-000000000000/approve`)
+      .send({ companyId })
+      .expect(404);
+  });
+
+  it("reimbursing an unknown claim is a 404", async () => {
+    const companyId = newCompanyId();
+    await request(app)
+      .post("/expense-reimbursements")
+      .send({ companyId, expenseClaimId: "00000000-0000-0000-0000-000000000000", amount: 100 })
+      .expect(404);
+  });
+
+  it("reimbursing before approval is a 400", async () => {
+    const companyId = newCompanyId();
+    const claim = await request(app)
+      .post("/expenses")
+      .send({ companyId, claimantName: "Ada", description: "Taxi", amount: 1000 })
+      .expect(201);
+
+    const res = await request(app)
+      .post("/expense-reimbursements")
+      .send({ companyId, expenseClaimId: claim.body.expenseClaimId, amount: 1000 })
+      .expect(400);
+    expect(res.body.error).toMatch(/has not been approved yet/);
+  });
+});
+
 describe("GET /events", () => {
   it("returns the raw event log in canonical order", async () => {
     const companyId = newCompanyId();

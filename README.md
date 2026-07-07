@@ -26,6 +26,7 @@ Command → Event → (append to log) → Projection (pure fold) → State
 | [`packages/kernel`](packages/kernel) | Event store (Postgres, immutable/append-only), command→event pipeline, projection engine, replay. Business domain: Customer, Supplier, Invoice + Payment (accounts receivable), Bill + BillPayment (accounts payable). |
 | [`packages/modules/accounting-se`](packages/modules/accounting-se) | Swedish bookkeeping: BAS chart of accounts, double-entry verifications, fiscal years, VAT, trial balance / income statement / balance sheet, SIE4 export. Reuses the kernel's event log; the kernel has no idea this exists. |
 | [`packages/workflows`](packages/workflows) | Deterministic workflow + task engine. Converts business events (e.g. `InvoiceCreated`) into tracked tasks (e.g. `SendInvoiceTask`) with a full lifecycle, without ever executing anything itself. |
+| [`packages/modules/expenses`](packages/modules/expenses) | Employee expense claims: submit → approve → reimburse, modeled directly on the kernel's Bill/BillPayment lifecycle. Reuses the kernel's event log; the kernel has no idea this exists. |
 | [`apps/api`](apps/api) | Express HTTP layer over all of the above. No business logic of its own — every route loads state, calls a command, appends, responds. **This is what a UI should talk to.** |
 
 Each package also fully explains its own design decisions in its source
@@ -93,6 +94,17 @@ POST /bills                { companyId, supplierId, amount, currency?, dueDate }
 GET  /bills?companyId=...                                          -> Bill[]
 POST /bills/:id/approve    { companyId }                            -> { billId, status }
 POST /bill-payments         { companyId, billId, amount }            -> Bill
+```
+
+### Expense claims (`submitted → approved → partially_reimbursed/reimbursed`)
+
+Same lifecycle as Bills, for money owed to a claimant instead of a supplier — no Employee entity exists yet (that's Payroll's domain), so a claim just carries a free-text claimant name/email.
+
+```
+POST /expenses              { companyId, claimantName, claimantEmail?, description, amount, currency? } -> { expenseClaimId }
+GET  /expenses?companyId=...                                        -> ExpenseClaim[]
+POST /expenses/:id/approve  { companyId }                            -> { expenseClaimId, status }
+POST /expense-reimbursements { companyId, expenseClaimId, amount }    -> ExpenseClaim
 ```
 
 ### Accounting (Swedish/BAS)
@@ -171,6 +183,7 @@ Every error response is `{ "error": "<message>" }`.
 ```
 packages/kernel/                    event store, command/projection/replay core + business domain
 packages/modules/accounting-se/     Swedish accounting module — reuses the kernel's event store
+packages/modules/expenses/          employee expense claims — reuses the kernel's event store
 packages/workflows/                 deterministic workflow + task engine — reuses the kernel's event store
 apps/api/                           HTTP API over the kernel + modules — what a UI talks to
 infrastructure/migrations/          raw SQL migrations

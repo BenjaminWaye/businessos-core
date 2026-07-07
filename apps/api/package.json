@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@businessos/accounting-se": "workspace:*",
+    "@businessos/expenses": "workspace:*",
     "@businessos/kernel": "workspace:*",
     "@businessos/workflows": "workspace:*",
     "express": "^4.21.1"

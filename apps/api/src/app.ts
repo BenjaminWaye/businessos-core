@@ -46,12 +46,20 @@ import {
   WORKFLOW_REGISTRY,
   defaultDeps as workflowDefaultDeps,
 } from "@businessos/workflows";
+import {
+  replayExpenses,
+  submitExpenseClaim,
+  approveExpenseClaim,
+  registerExpenseReimbursement,
+  defaultDeps as expensesDefaultDeps,
+} from "@businessos/expenses";
 
 export function createApp(pool: Pool): express.Express {
   const store = new EventStore(pool);
   const deps = defaultDeps();
   const accountingDeps = accountingDefaultDeps();
   const workflowDeps = workflowDefaultDeps();
+  const expensesDeps = expensesDefaultDeps();
   const app = express();
   app.use(express.json());
 
@@ -334,6 +342,46 @@ export function createApp(pool: Pool): express.Express {
   app.get("/events", asyncRoute(async (req, res) => {
     const companyId = requireCompanyId(req.query["companyId"]);
     res.json(await store.byCompany(companyId));
+  }));
+
+  app.post("/expenses", asyncRoute(async (req, res) => {
+    const { companyId, claimantName, claimantEmail, description, amount, currency } = req.body ?? {};
+    const draft = submitExpenseClaim(
+      { companyId: requireCompanyId(companyId), claimantName, claimantEmail, description, amount, currency },
+      expensesDeps,
+    );
+    await store.append([draft]);
+    res.status(201).json({ expenseClaimId: draft.payload.expenseClaimId });
+  }));
+
+  app.get("/expenses", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const state = await replayExpenses(store, companyId);
+    res.json(state.claims);
+  }));
+
+  app.post("/expenses/:id/approve", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.body?.companyId);
+    const state = await replayExpenses(store, companyId);
+    const claim = state.claims.find((c) => c.id === req.params["id"]);
+    if (!claim) throw new HttpError(404, "expense claim not found");
+
+    const draft = approveExpenseClaim(claim, { companyId }, expensesDeps);
+    await store.append([draft]);
+    res.status(200).json({ expenseClaimId: claim.id, status: "approved" });
+  }));
+
+  app.post("/expense-reimbursements", asyncRoute(async (req, res) => {
+    const { companyId, expenseClaimId, amount } = req.body ?? {};
+    const company = requireCompanyId(companyId);
+    const state = await replayExpenses(store, company);
+    const claim = state.claims.find((c) => c.id === expenseClaimId);
+    if (!claim) throw new HttpError(404, "expense claim not found");
+
+    const draft = registerExpenseReimbursement(claim, { companyId: company, amount }, expensesDeps);
+    await store.append([draft]);
+    const after = await replayExpenses(store, company);
+    res.status(201).json(after.claims.find((c) => c.id === expenseClaimId));
   }));
 
   app.get("/state", asyncRoute(async (req, res) => {

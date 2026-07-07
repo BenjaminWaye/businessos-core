@@ -17,6 +17,9 @@ importers:
       '@businessos/accounting-se':
         specifier: workspace:*
         version: link:../../packages/modules/accounting-se
+      '@businessos/expenses':
+        specifier: workspace:*
+        version: link:../../packages/modules/expenses
       '@businessos/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
@@ -72,6 +75,22 @@ importers:
         version: 2.1.9(@types/node@22.20.0)
 
   packages/modules/accounting-se:
+    dependencies:
+      '@businessos/kernel':
+        specifier: workspace:*
+        version: link:../../kernel
+    devDependencies:
+      '@types/node':
+        specifier: ^22.9.0
+        version: 22.20.0
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
+      vitest:
+        specifier: ^2.1.5
+        version: 2.1.9(@types/node@22.20.0)
+
+  packages/modules/expenses:
     dependencies:
       '@businessos/kernel':
         specifier: workspace:*
