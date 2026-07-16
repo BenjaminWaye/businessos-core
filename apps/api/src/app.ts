@@ -53,6 +53,18 @@ import {
   registerExpenseReimbursement,
   defaultDeps as expensesDefaultDeps,
 } from "@businessos/expenses";
+import {
+  replayPayroll,
+  addEmployee,
+  terminateEmployee,
+  createPayrollRun,
+  finalizePayrollRun,
+  generatePayslip,
+  WITHHOLDING_TABLE_NUMBERS,
+  listMunicipalities,
+  suggestTaxTable,
+  defaultDeps as payrollDefaultDeps,
+} from "@businessos/payroll";
 
 export function createApp(pool: Pool): express.Express {
   const store = new EventStore(pool);
@@ -60,6 +72,7 @@ export function createApp(pool: Pool): express.Express {
   const accountingDeps = accountingDefaultDeps();
   const workflowDeps = workflowDefaultDeps();
   const expensesDeps = expensesDefaultDeps();
+  const payrollDeps = payrollDefaultDeps();
   const app = express();
   app.use(express.json());
 
@@ -382,6 +395,90 @@ export function createApp(pool: Pool): express.Express {
     await store.append([draft]);
     const after = await replayExpenses(store, company);
     res.status(201).json(after.claims.find((c) => c.id === expenseClaimId));
+  }));
+
+  app.post("/employees", asyncRoute(async (req, res) => {
+    const { companyId, name, email, personalNumber, birthDate, monthlySalary, taxTable } = req.body ?? {};
+    const draft = addEmployee(
+      { companyId: requireCompanyId(companyId), name, email, personalNumber, birthDate, monthlySalary, taxTable },
+      payrollDeps,
+    );
+    await store.append([draft]);
+    res.status(201).json({ employeeId: draft.payload.employeeId });
+  }));
+
+  app.get("/employees", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const state = await replayPayroll(store, companyId);
+    res.json(state.employees);
+  }));
+
+  app.post("/employees/:id/terminate", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.body?.companyId);
+    const state = await replayPayroll(store, companyId);
+    const employee = state.employees.find((e) => e.id === req.params["id"]);
+    if (!employee) throw new HttpError(404, "employee not found");
+
+    const draft = terminateEmployee(employee, { companyId }, payrollDeps);
+    await store.append([draft]);
+    res.status(200).json({ employeeId: employee.id, status: "terminated" });
+  }));
+
+  app.get("/payroll/tax-tables", asyncRoute(async (_req, res) => {
+    res.json(WITHHOLDING_TABLE_NUMBERS);
+  }));
+
+  app.get("/payroll/municipalities", asyncRoute(async (_req, res) => {
+    res.json(listMunicipalities().map((name) => ({ name, suggestedTable: suggestTaxTable(name) })));
+  }));
+
+  app.post("/payroll-runs", asyncRoute(async (req, res) => {
+    const { companyId, year, month } = req.body ?? {};
+    const company = requireCompanyId(companyId);
+    const state = await replayPayroll(store, company);
+    const draft = createPayrollRun(state, { companyId: company, year, month }, payrollDeps);
+    await store.append([draft]);
+    res.status(201).json({ payrollRunId: draft.payload.payrollRunId });
+  }));
+
+  app.get("/payroll-runs", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const state = await replayPayroll(store, companyId);
+    res.json(state.payrollRuns);
+  }));
+
+  app.post("/payroll-runs/:id/finalize", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.body?.companyId);
+    const state = await replayPayroll(store, companyId);
+    const run = state.payrollRuns.find((r) => r.id === req.params["id"]);
+    if (!run) throw new HttpError(404, "payroll run not found");
+
+    const draft = finalizePayrollRun(run, { companyId }, payrollDeps);
+    await store.append([draft]);
+    res.status(200).json({ payrollRunId: run.id, status: "finalized" });
+  }));
+
+  app.post("/payslips", asyncRoute(async (req, res) => {
+    const { companyId, payrollRunId, employeeId } = req.body ?? {};
+    const company = requireCompanyId(companyId);
+    const state = await replayPayroll(store, company);
+    const run = state.payrollRuns.find((r) => r.id === payrollRunId);
+    if (!run) throw new HttpError(404, "payroll run not found");
+    const employee = state.employees.find((e) => e.id === employeeId);
+    if (!employee) throw new HttpError(404, "employee not found");
+
+    const draft = generatePayslip(state, run, employee, { companyId: company }, payrollDeps);
+    await store.append([draft]);
+    const after = await replayPayroll(store, company);
+    res.status(201).json(after.payslips.find((p) => p.payrollRunId === payrollRunId && p.employeeId === employeeId));
+  }));
+
+  app.get("/payslips", asyncRoute(async (req, res) => {
+    const companyId = requireCompanyId(req.query["companyId"]);
+    const payrollRunId = req.query["payrollRunId"];
+    const state = await replayPayroll(store, companyId);
+    const payslips = typeof payrollRunId === "string" ? state.payslips.filter((p) => p.payrollRunId === payrollRunId) : state.payslips;
+    res.json(payslips);
   }));
 
   app.get("/state", asyncRoute(async (req, res) => {

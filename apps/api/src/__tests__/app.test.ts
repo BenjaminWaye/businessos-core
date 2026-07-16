@@ -502,3 +502,107 @@ describe("task actions", () => {
       .expect(404);
   });
 });
+
+describe("payroll", () => {
+  it("GET /payroll/tax-tables lists known table numbers", async () => {
+    const res = await request(app).get("/payroll/tax-tables").expect(200);
+    expect(res.body).toEqual(expect.arrayContaining([33]));
+  });
+
+  it("GET /payroll/municipalities lists municipalities with suggested tables", async () => {
+    const res = await request(app).get("/payroll/municipalities").expect(200);
+    expect(res.body).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "UPPSALA", suggestedTable: 33 })]),
+    );
+  });
+
+  it("POST /employees creates an employee, GET /employees lists it", async () => {
+    const companyId = newCompanyId();
+    const created = await request(app)
+      .post("/employees")
+      .send({ companyId, name: "Ada Lovelace", monthlySalary: 35000_00, taxTable: 33 })
+      .expect(201);
+    expect(created.body.employeeId).toEqual(expect.any(String));
+
+    const list = await request(app).get(`/employees?companyId=${companyId}`).expect(200);
+    expect(list.body).toEqual([
+      expect.objectContaining({ id: created.body.employeeId, name: "Ada Lovelace", status: "active" }),
+    ]);
+  });
+
+  it("POST /employees/:id/terminate marks an employee terminated", async () => {
+    const companyId = newCompanyId();
+    const created = await request(app)
+      .post("/employees")
+      .send({ companyId, name: "Ada", monthlySalary: 1000, taxTable: 33 })
+      .expect(201);
+
+    const res = await request(app)
+      .post(`/employees/${created.body.employeeId}/terminate`)
+      .send({ companyId })
+      .expect(200);
+    expect(res.body).toMatchObject({ employeeId: created.body.employeeId, status: "terminated" });
+  });
+
+  it("terminating an unknown employee is a 404", async () => {
+    const companyId = newCompanyId();
+    await request(app)
+      .post("/employees/00000000-0000-0000-0000-000000000000/terminate")
+      .send({ companyId })
+      .expect(404);
+  });
+
+  it("payroll run lifecycle: create -> generate payslip -> finalize", async () => {
+    const companyId = newCompanyId();
+    const employee = await request(app)
+      .post("/employees")
+      .send({ companyId, name: "Ada", monthlySalary: 6850_00, taxTable: 33 })
+      .expect(201);
+
+    const run = await request(app)
+      .post("/payroll-runs")
+      .send({ companyId, year: 2026, month: 6 })
+      .expect(201);
+
+    const runsList = await request(app).get(`/payroll-runs?companyId=${companyId}`).expect(200);
+    expect(runsList.body).toEqual([expect.objectContaining({ id: run.body.payrollRunId, status: "draft" })]);
+
+    const payslip = await request(app)
+      .post("/payslips")
+      .send({ companyId, payrollRunId: run.body.payrollRunId, employeeId: employee.body.employeeId })
+      .expect(201);
+    expect(payslip.body).toMatchObject({ grossSalary: 6850_00, taxWithheld: 578_00 });
+
+    const payslipsList = await request(app)
+      .get(`/payslips?companyId=${companyId}&payrollRunId=${run.body.payrollRunId}`)
+      .expect(200);
+    expect(payslipsList.body).toHaveLength(1);
+
+    const finalized = await request(app)
+      .post(`/payroll-runs/${run.body.payrollRunId}/finalize`)
+      .send({ companyId })
+      .expect(200);
+    expect(finalized.body).toMatchObject({ payrollRunId: run.body.payrollRunId, status: "finalized" });
+  });
+
+  it("generating a payslip against an unknown payroll run is a 404", async () => {
+    const companyId = newCompanyId();
+    const employee = await request(app)
+      .post("/employees")
+      .send({ companyId, name: "Ada", monthlySalary: 1000, taxTable: 33 })
+      .expect(201);
+
+    await request(app)
+      .post("/payslips")
+      .send({ companyId, payrollRunId: "00000000-0000-0000-0000-000000000000", employeeId: employee.body.employeeId })
+      .expect(404);
+  });
+
+  it("finalizing an unknown payroll run is a 404", async () => {
+    const companyId = newCompanyId();
+    await request(app)
+      .post("/payroll-runs/00000000-0000-0000-0000-000000000000/finalize")
+      .send({ companyId })
+      .expect(404);
+  });
+});

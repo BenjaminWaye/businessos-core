@@ -1,0 +1,1166 @@
+{
+"fetchedAt": "2026-07-16",
+"municipalities": {
+"ALE": {
+"rateExclChurch": 33.092,
+"suggestedTable": 33
+},
+"ALINGSÅS": {
+"rateExclChurch": 33.132,
+"suggestedTable": 33
+},
+"ALVESTA": {
+"rateExclChurch": 33.712,
+"suggestedTable": 34
+},
+"ANEBY": {
+"rateExclChurch": 34.142,
+"suggestedTable": 34
+},
+"ARBOGA": {
+"rateExclChurch": 33.582,
+"suggestedTable": 34
+},
+"ARJEPLOG": {
+"rateExclChurch": 35.132,
+"suggestedTable": 35
+},
+"ARVIDSJAUR": {
+"rateExclChurch": 34.432,
+"suggestedTable": 34
+},
+"ARVIKA": {
+"rateExclChurch": 34.322,
+"suggestedTable": 34
+},
+"ASKERSUND": {
+"rateExclChurch": 34.442,
+"suggestedTable": 34
+},
+"AVESTA": {
+"rateExclChurch": 34.242,
+"suggestedTable": 34
+},
+"BENGTSFORS": {
+"rateExclChurch": 34.692,
+"suggestedTable": 35
+},
+"BERG": {
+"rateExclChurch": 34.512,
+"suggestedTable": 35
+},
+"BJURHOLM": {
+"rateExclChurch": 35.292,
+"suggestedTable": 35
+},
+"BJUV": {
+"rateExclChurch": 32.462,
+"suggestedTable": 32
+},
+"BODEN": {
+"rateExclChurch": 34.232,
+"suggestedTable": 34
+},
+"BOLLEBYGD": {
+"rateExclChurch": 33.362,
+"suggestedTable": 33
+},
+"BOLLNÄS": {
+"rateExclChurch": 33.662,
+"suggestedTable": 34
+},
+"BORGHOLM": {
+"rateExclChurch": 33.732,
+"suggestedTable": 34
+},
+"BORLÄNGE": {
+"rateExclChurch": 34.692,
+"suggestedTable": 35
+},
+"BORÅS": {
+"rateExclChurch": 33.082,
+"suggestedTable": 33
+},
+"BOTKYRKA": {
+"rateExclChurch": 32.522,
+"suggestedTable": 33
+},
+"BOXHOLM": {
+"rateExclChurch": 33.662,
+"suggestedTable": 34
+},
+"BROMÖLLA": {
+"rateExclChurch": 34.032,
+"suggestedTable": 34
+},
+"BRÄCKE": {
+"rateExclChurch": 35.382,
+"suggestedTable": 35
+},
+"BURLÖV": {
+"rateExclChurch": 31.562,
+"suggestedTable": 32
+},
+"BÅSTAD": {
+"rateExclChurch": 31.702,
+"suggestedTable": 32
+},
+"DALS-ED": {
+"rateExclChurch": 34.982,
+"suggestedTable": 35
+},
+"DANDERYD": {
+"rateExclChurch": 30.872,
+"suggestedTable": 31
+},
+"DEGERFORS": {
+"rateExclChurch": 35.592,
+"suggestedTable": 36
+},
+"DOROTEA": {
+"rateExclChurch": 35.942,
+"suggestedTable": 36
+},
+"EDA": {
+"rateExclChurch": 34.842,
+"suggestedTable": 35
+},
+"EKERÖ": {
+"rateExclChurch": 31.742,
+"suggestedTable": 32
+},
+"EKSJÖ": {
+"rateExclChurch": 34.312,
+"suggestedTable": 34
+},
+"EMMABODA": {
+"rateExclChurch": 34.112,
+"suggestedTable": 34
+},
+"ENKÖPING": {
+"rateExclChurch": 33.342,
+"suggestedTable": 33
+},
+"ESKILSTUNA": {
+"rateExclChurch": 33.142,
+"suggestedTable": 33
+},
+"ESLÖV": {
+"rateExclChurch": 32.012,
+"suggestedTable": 32
+},
+"ESSUNGA": {
+"rateExclChurch": 33.342,
+"suggestedTable": 33
+},
+"FAGERSTA": {
+"rateExclChurch": 33.282,
+"suggestedTable": 33
+},
+"FALKENBERG": {
+"rateExclChurch": 32.792,
+"suggestedTable": 33
+},
+"FALKÖPING": {
+"rateExclChurch": 33.722,
+"suggestedTable": 34
+},
+"FALUN": {
+"rateExclChurch": 34.342,
+"suggestedTable": 34
+},
+"FILIPSTAD": {
+"rateExclChurch": 34.842,
+"suggestedTable": 35
+},
+"FINSPÅNG": {
+"rateExclChurch": 33.992,
+"suggestedTable": 34
+},
+"FLEN": {
+"rateExclChurch": 33.392,
+"suggestedTable": 33
+},
+"FORSHAGA": {
+"rateExclChurch": 34.922,
+"suggestedTable": 35
+},
+"FÄRGELANDA": {
+"rateExclChurch": 34.682,
+"suggestedTable": 35
+},
+"GAGNEF": {
+"rateExclChurch": 34.562,
+"suggestedTable": 35
+},
+"GISLAVED": {
+"rateExclChurch": 34.042,
+"suggestedTable": 34
+},
+"GNESTA": {
+"rateExclChurch": 33.242,
+"suggestedTable": 33
+},
+"GNOSJÖ": {
+"rateExclChurch": 34.292,
+"suggestedTable": 34
+},
+"GOTLAND": {
+"rateExclChurch": 33.892,
+"suggestedTable": 34
+},
+"GRUMS": {
+"rateExclChurch": 35.072,
+"suggestedTable": 35
+},
+"GRÄSTORP": {
+"rateExclChurch": 33.762,
+"suggestedTable": 34
+},
+"GULLSPÅNG": {
+"rateExclChurch": 34.262,
+"suggestedTable": 34
+},
+"GÄLLIVARE": {
+"rateExclChurch": 34.182,
+"suggestedTable": 34
+},
+"GÄVLE": {
+"rateExclChurch": 34.062,
+"suggestedTable": 34
+},
+"GÖTEBORG": {
+"rateExclChurch": 32.892,
+"suggestedTable": 33
+},
+"GÖTENE": {
+"rateExclChurch": 33.892,
+"suggestedTable": 34
+},
+"HABO": {
+"rateExclChurch": 34.222,
+"suggestedTable": 34
+},
+"HAGFORS": {
+"rateExclChurch": 34.592,
+"suggestedTable": 35
+},
+"HALLSBERG": {
+"rateExclChurch": 34.142,
+"suggestedTable": 34
+},
+"HALLSTAHAMMAR": {
+"rateExclChurch": 32.982,
+"suggestedTable": 33
+},
+"HALMSTAD": {
+"rateExclChurch": 32.672,
+"suggestedTable": 33
+},
+"HAMMARÖ": {
+"rateExclChurch": 35.342,
+"suggestedTable": 35
+},
+"HANINGE": {
+"rateExclChurch": 31.572,
+"suggestedTable": 32
+},
+"HAPARANDA": {
+"rateExclChurch": 34.132,
+"suggestedTable": 34
+},
+"HEBY": {
+"rateExclChurch": 34.502,
+"suggestedTable": 35
+},
+"HEDEMORA": {
+"rateExclChurch": 34.442,
+"suggestedTable": 34
+},
+"HELSINGBORG": {
+"rateExclChurch": 31.682,
+"suggestedTable": 32
+},
+"HERRLJUNGA": {
+"rateExclChurch": 33.912,
+"suggestedTable": 34
+},
+"HJO": {
+"rateExclChurch": 33.772,
+"suggestedTable": 34
+},
+"HOFORS": {
+"rateExclChurch": 34.662,
+"suggestedTable": 35
+},
+"HUDDINGE": {
+"rateExclChurch": 32.002,
+"suggestedTable": 32
+},
+"HUDIKSVALL": {
+"rateExclChurch": 33.412,
+"suggestedTable": 33
+},
+"HULTSFRED": {
+"rateExclChurch": 34.062,
+"suggestedTable": 34
+},
+"HYLTE": {
+"rateExclChurch": 34.142,
+"suggestedTable": 34
+},
+"HÄLLEFORS": {
+"rateExclChurch": 34.642,
+"suggestedTable": 35
+},
+"HÄRJEDALEN": {
+"rateExclChurch": 34.462,
+"suggestedTable": 34
+},
+"HÄRNÖSAND": {
+"rateExclChurch": 34.922,
+"suggestedTable": 35
+},
+"HÄRRYDA": {
+"rateExclChurch": 32.272,
+"suggestedTable": 32
+},
+"HÄSSLEHOLM": {
+"rateExclChurch": 32.672,
+"suggestedTable": 33
+},
+"HÅBO": {
+"rateExclChurch": 33.592,
+"suggestedTable": 34
+},
+"HÖGANÄS": {
+"rateExclChurch": 31.202,
+"suggestedTable": 31
+},
+"HÖGSBY": {
+"rateExclChurch": 34.362,
+"suggestedTable": 34
+},
+"HÖRBY": {
+"rateExclChurch": 32.552,
+"suggestedTable": 33
+},
+"HÖÖR": {
+"rateExclChurch": 32.922,
+"suggestedTable": 33
+},
+"JOKKMOKK": {
+"rateExclChurch": 34.582,
+"suggestedTable": 35
+},
+"JÄRFÄLLA": {
+"rateExclChurch": 31.812,
+"suggestedTable": 32
+},
+"JÖNKÖPING": {
+"rateExclChurch": 33.692,
+"suggestedTable": 34
+},
+"KALIX": {
+"rateExclChurch": 34.182,
+"suggestedTable": 34
+},
+"KALMAR": {
+"rateExclChurch": 33.962,
+"suggestedTable": 34
+},
+"KARLSBORG": {
+"rateExclChurch": 33.092,
+"suggestedTable": 33
+},
+"KARLSHAMN": {
+"rateExclChurch": 34.092,
+"suggestedTable": 34
+},
+"KARLSKOGA": {
+"rateExclChurch": 34.592,
+"suggestedTable": 35
+},
+"KARLSKRONA": {
+"rateExclChurch": 33.982,
+"suggestedTable": 34
+},
+"KARLSTAD": {
+"rateExclChurch": 33.842,
+"suggestedTable": 34
+},
+"KATRINEHOLM": {
+"rateExclChurch": 33.242,
+"suggestedTable": 33
+},
+"KIL": {
+"rateExclChurch": 34.922,
+"suggestedTable": 35
+},
+"KINDA": {
+"rateExclChurch": 33.292,
+"suggestedTable": 33
+},
+"KIRUNA": {
+"rateExclChurch": 34.682,
+"suggestedTable": 35
+},
+"KLIPPAN": {
+"rateExclChurch": 32.222,
+"suggestedTable": 32
+},
+"KNIVSTA": {
+"rateExclChurch": 32.912,
+"suggestedTable": 33
+},
+"KRAMFORS": {
+"rateExclChurch": 34.722,
+"suggestedTable": 35
+},
+"KRISTIANSTAD": {
+"rateExclChurch": 32.932,
+"suggestedTable": 33
+},
+"KRISTINEHAMN": {
+"rateExclChurch": 34.542,
+"suggestedTable": 35
+},
+"KROKOM": {
+"rateExclChurch": 34.162,
+"suggestedTable": 34
+},
+"KUMLA": {
+"rateExclChurch": 34.132,
+"suggestedTable": 34
+},
+"KUNGSBACKA": {
+"rateExclChurch": 32.872,
+"suggestedTable": 33
+},
+"KUNGSÖR": {
+"rateExclChurch": 33.202,
+"suggestedTable": 33
+},
+"KUNGÄLV": {
+"rateExclChurch": 33.212,
+"suggestedTable": 33
+},
+"KÄVLINGE": {
+"rateExclChurch": 29.882,
+"suggestedTable": 30
+},
+"KÖPING": {
+"rateExclChurch": 33.332,
+"suggestedTable": 33
+},
+"LAHOLM": {
+"rateExclChurch": 33.092,
+"suggestedTable": 33
+},
+"LANDSKRONA": {
+"rateExclChurch": 31.712,
+"suggestedTable": 32
+},
+"LAXÅ": {
+"rateExclChurch": 35.292,
+"suggestedTable": 35
+},
+"LEKEBERG": {
+"rateExclChurch": 34.022,
+"suggestedTable": 34
+},
+"LEKSAND": {
+"rateExclChurch": 34.092,
+"suggestedTable": 34
+},
+"LERUM": {
+"rateExclChurch": 32.322,
+"suggestedTable": 32
+},
+"LESSEBO": {
+"rateExclChurch": 34.102,
+"suggestedTable": 34
+},
+"LIDINGÖ": {
+"rateExclChurch": 29.962,
+"suggestedTable": 30
+},
+"LIDKÖPING": {
+"rateExclChurch": 33.032,
+"suggestedTable": 33
+},
+"LILLA EDET": {
+"rateExclChurch": 34.142,
+"suggestedTable": 34
+},
+"LINDESBERG": {
+"rateExclChurch": 34.892,
+"suggestedTable": 35
+},
+"LINKÖPING": {
+"rateExclChurch": 32.042,
+"suggestedTable": 32
+},
+"LJUNGBY": {
+"rateExclChurch": 33.362,
+"suggestedTable": 33
+},
+"LJUSDAL": {
+"rateExclChurch": 34.162,
+"suggestedTable": 34
+},
+"LJUSNARSBERG": {
+"rateExclChurch": 34.092,
+"suggestedTable": 34
+},
+"LOMMA": {
+"rateExclChurch": 31.012,
+"suggestedTable": 31
+},
+"LUDVIKA": {
+"rateExclChurch": 34.342,
+"suggestedTable": 34
+},
+"LULEÅ": {
+"rateExclChurch": 34.132,
+"suggestedTable": 34
+},
+"LUND": {
+"rateExclChurch": 32.712,
+"suggestedTable": 33
+},
+"LYCKSELE": {
+"rateExclChurch": 35.192,
+"suggestedTable": 35
+},
+"LYSEKIL": {
+"rateExclChurch": 34.232,
+"suggestedTable": 34
+},
+"MALMÖ": {
+"rateExclChurch": 32.712,
+"suggestedTable": 33
+},
+"MALUNG-SÄLEN": {
+"rateExclChurch": 34.742,
+"suggestedTable": 35
+},
+"MALÅ": {
+"rateExclChurch": 35.492,
+"suggestedTable": 35
+},
+"MARIESTAD": {
+"rateExclChurch": 33.032,
+"suggestedTable": 33
+},
+"MARK": {
+"rateExclChurch": 33.282,
+"suggestedTable": 33
+},
+"MARKARYD": {
+"rateExclChurch": 33.602,
+"suggestedTable": 34
+},
+"MELLERUD": {
+"rateExclChurch": 34.372,
+"suggestedTable": 34
+},
+"MJÖLBY": {
+"rateExclChurch": 33.742,
+"suggestedTable": 34
+},
+"MORA": {
+"rateExclChurch": 34.612,
+"suggestedTable": 35
+},
+"MOTALA": {
+"rateExclChurch": 33.542,
+"suggestedTable": 34
+},
+"MULLSJÖ": {
+"rateExclChurch": 34.392,
+"suggestedTable": 34
+},
+"MUNKEDAL": {
+"rateExclChurch": 35.152,
+"suggestedTable": 35
+},
+"MUNKFORS": {
+"rateExclChurch": 34.592,
+"suggestedTable": 35
+},
+"MÖLNDAL": {
+"rateExclChurch": 32.282,
+"suggestedTable": 32
+},
+"MÖNSTERÅS": {
+"rateExclChurch": 34.362,
+"suggestedTable": 34
+},
+"MÖRBYLÅNGA": {
+"rateExclChurch": 34.362,
+"suggestedTable": 34
+},
+"NACKA": {
+"rateExclChurch": 30.402,
+"suggestedTable": 30
+},
+"NORA": {
+"rateExclChurch": 34.842,
+"suggestedTable": 35
+},
+"NORBERG": {
+"rateExclChurch": 33.832,
+"suggestedTable": 34
+},
+"NORDANSTIG": {
+"rateExclChurch": 34.312,
+"suggestedTable": 34
+},
+"NORDMALING": {
+"rateExclChurch": 35.392,
+"suggestedTable": 35
+},
+"NORRKÖPING": {
+"rateExclChurch": 33.592,
+"suggestedTable": 34
+},
+"NORRTÄLJE": {
+"rateExclChurch": 32.342,
+"suggestedTable": 32
+},
+"NORSJÖ": {
+"rateExclChurch": 35.492,
+"suggestedTable": 35
+},
+"NYBRO": {
+"rateExclChurch": 34.482,
+"suggestedTable": 34
+},
+"NYKVARN": {
+"rateExclChurch": 32.592,
+"suggestedTable": 33
+},
+"NYKÖPING": {
+"rateExclChurch": 32.542,
+"suggestedTable": 33
+},
+"NYNÄSHAMN": {
+"rateExclChurch": 32.472,
+"suggestedTable": 32
+},
+"NÄSSJÖ": {
+"rateExclChurch": 34.592,
+"suggestedTable": 35
+},
+"OCKELBO": {
+"rateExclChurch": 34.562,
+"suggestedTable": 35
+},
+"OLOFSTRÖM": {
+"rateExclChurch": 34.042,
+"suggestedTable": 34
+},
+"ORSA": {
+"rateExclChurch": 34.592,
+"suggestedTable": 35
+},
+"ORUST": {
+"rateExclChurch": 33.982,
+"suggestedTable": 34
+},
+"OSBY": {
+"rateExclChurch": 34.282,
+"suggestedTable": 34
+},
+"OSKARSHAMN": {
+"rateExclChurch": 34.502,
+"suggestedTable": 35
+},
+"OVANÅKER": {
+"rateExclChurch": 33.662,
+"suggestedTable": 34
+},
+"OXELÖSUND": {
+"rateExclChurch": 33.342,
+"suggestedTable": 33
+},
+"PAJALA": {
+"rateExclChurch": 35.032,
+"suggestedTable": 35
+},
+"PARTILLE": {
+"rateExclChurch": 31.652,
+"suggestedTable": 32
+},
+"PERSTORP": {
+"rateExclChurch": 32.282,
+"suggestedTable": 32
+},
+"PITEÅ": {
+"rateExclChurch": 33.882,
+"suggestedTable": 34
+},
+"RAGUNDA": {
+"rateExclChurch": 35.212,
+"suggestedTable": 35
+},
+"ROBERTSFORS": {
+"rateExclChurch": 35.292,
+"suggestedTable": 35
+},
+"RONNEBY": {
+"rateExclChurch": 33.972,
+"suggestedTable": 34
+},
+"RÄTTVIK": {
+"rateExclChurch": 34.092,
+"suggestedTable": 34
+},
+"SALA": {
+"rateExclChurch": 33.482,
+"suggestedTable": 33
+},
+"SALEM": {
+"rateExclChurch": 32.292,
+"suggestedTable": 32
+},
+"SANDVIKEN": {
+"rateExclChurch": 33.412,
+"suggestedTable": 33
+},
+"SIGTUNA": {
+"rateExclChurch": 32.122,
+"suggestedTable": 32
+},
+"SIMRISHAMN": {
+"rateExclChurch": 31.982,
+"suggestedTable": 32
+},
+"SJÖBO": {
+"rateExclChurch": 32.392,
+"suggestedTable": 32
+},
+"SKARA": {
+"rateExclChurch": 33.672,
+"suggestedTable": 34
+},
+"SKELLEFTEÅ": {
+"rateExclChurch": 34.742,
+"suggestedTable": 35
+},
+"SKINNSKATTEBERG": {
+"rateExclChurch": 33.632,
+"suggestedTable": 34
+},
+"SKURUP": {
+"rateExclChurch": 31.892,
+"suggestedTable": 32
+},
+"SKÖVDE": {
+"rateExclChurch": 33.382,
+"suggestedTable": 33
+},
+"SMEDJEBACKEN": {
+"rateExclChurch": 34.732,
+"suggestedTable": 35
+},
+"SOLLEFTEÅ": {
+"rateExclChurch": 34.972,
+"suggestedTable": 35
+},
+"SOLLENTUNA": {
+"rateExclChurch": 30.742,
+"suggestedTable": 31
+},
+"SOLNA": {
+"rateExclChurch": 29.992,
+"suggestedTable": 30
+},
+"SORSELE": {
+"rateExclChurch": 35.742,
+"suggestedTable": 36
+},
+"SOTENÄS": {
+"rateExclChurch": 33.762,
+"suggestedTable": 34
+},
+"STAFFANSTORP": {
+"rateExclChurch": 30.412,
+"suggestedTable": 30
+},
+"STENUNGSUND": {
+"rateExclChurch": 33.412,
+"suggestedTable": 33
+},
+"STOCKHOLM": {
+"rateExclChurch": 30.62,
+"suggestedTable": 31
+},
+"STORFORS": {
+"rateExclChurch": 35.272,
+"suggestedTable": 35
+},
+"STORUMAN": {
+"rateExclChurch": 35.242,
+"suggestedTable": 35
+},
+"STRÄNGNÄS": {
+"rateExclChurch": 32.792,
+"suggestedTable": 33
+},
+"STRÖMSTAD": {
+"rateExclChurch": 33.682,
+"suggestedTable": 34
+},
+"STRÖMSUND": {
+"rateExclChurch": 35.212,
+"suggestedTable": 35
+},
+"SUNDBYBERG": {
+"rateExclChurch": 31.872,
+"suggestedTable": 32
+},
+"SUNDSVALL": {
+"rateExclChurch": 34.172,
+"suggestedTable": 34
+},
+"SUNNE": {
+"rateExclChurch": 34.042,
+"suggestedTable": 34
+},
+"SURAHAMMAR": {
+"rateExclChurch": 33.482,
+"suggestedTable": 33
+},
+"SVALÖV": {
+"rateExclChurch": 32.212,
+"suggestedTable": 32
+},
+"SVEDALA": {
+"rateExclChurch": 31.712,
+"suggestedTable": 32
+},
+"SVENLJUNGA": {
+"rateExclChurch": 33.822,
+"suggestedTable": 34
+},
+"SÄFFLE": {
+"rateExclChurch": 34.092,
+"suggestedTable": 34
+},
+"SÄTER": {
+"rateExclChurch": 34.592,
+"suggestedTable": 35
+},
+"SÄVSJÖ": {
+"rateExclChurch": 33.972,
+"suggestedTable": 34
+},
+"SÖDERHAMN": {
+"rateExclChurch": 33.462,
+"suggestedTable": 33
+},
+"SÖDERKÖPING": {
+"rateExclChurch": 33.822,
+"suggestedTable": 34
+},
+"SÖDERTÄLJE": {
+"rateExclChurch": 32.672,
+"suggestedTable": 33
+},
+"SÖLVESBORG": {
+"rateExclChurch": 34.152,
+"suggestedTable": 34
+},
+"TANUM": {
+"rateExclChurch": 33.332,
+"suggestedTable": 33
+},
+"TIBRO": {
+"rateExclChurch": 33.482,
+"suggestedTable": 33
+},
+"TIDAHOLM": {
+"rateExclChurch": 33.842,
+"suggestedTable": 34
+},
+"TIERP": {
+"rateExclChurch": 33.292,
+"suggestedTable": 33
+},
+"TIMRÅ": {
+"rateExclChurch": 34.672,
+"suggestedTable": 35
+},
+"TINGSRYD": {
+"rateExclChurch": 34.292,
+"suggestedTable": 34
+},
+"TJÖRN": {
+"rateExclChurch": 33.482,
+"suggestedTable": 33
+},
+"TOMELILLA": {
+"rateExclChurch": 32.082,
+"suggestedTable": 32
+},
+"TORSBY": {
+"rateExclChurch": 34.592,
+"suggestedTable": 35
+},
+"TORSÅS": {
+"rateExclChurch": 34.082,
+"suggestedTable": 34
+},
+"TRANEMO": {
+"rateExclChurch": 33.272,
+"suggestedTable": 33
+},
+"TRANÅS": {
+"rateExclChurch": 34.055,
+"suggestedTable": 34
+},
+"TRELLEBORG": {
+"rateExclChurch": 31.872,
+"suggestedTable": 32
+},
+"TROLLHÄTTAN": {
+"rateExclChurch": 34.132,
+"suggestedTable": 34
+},
+"TROSA": {
+"rateExclChurch": 32.322,
+"suggestedTable": 32
+},
+"TYRESÖ": {
+"rateExclChurch": 32.122,
+"suggestedTable": 32
+},
+"TÄBY": {
+"rateExclChurch": 30.172,
+"suggestedTable": 30
+},
+"TÖREBODA": {
+"rateExclChurch": 33.492,
+"suggestedTable": 33
+},
+"UDDEVALLA": {
+"rateExclChurch": 33.932,
+"suggestedTable": 34
+},
+"ULRICEHAMN": {
+"rateExclChurch": 32.822,
+"suggestedTable": 33
+},
+"UMEÅ": {
+"rateExclChurch": 34.942,
+"suggestedTable": 35
+},
+"UPPLANDS VÄSBY": {
+"rateExclChurch": 32.042,
+"suggestedTable": 32
+},
+"UPPLANDS-BRO": {
+"rateExclChurch": 32.022,
+"suggestedTable": 32
+},
+"UPPSALA": {
+"rateExclChurch": 33.142,
+"suggestedTable": 33
+},
+"UPPVIDINGE": {
+"rateExclChurch": 34.092,
+"suggestedTable": 34
+},
+"VADSTENA": {
+"rateExclChurch": 34.642,
+"suggestedTable": 35
+},
+"VAGGERYD": {
+"rateExclChurch": 33.542,
+"suggestedTable": 34
+},
+"VALDEMARSVIK": {
+"rateExclChurch": 34.322,
+"suggestedTable": 34
+},
+"VALLENTUNA": {
+"rateExclChurch": 31.522,
+"suggestedTable": 32
+},
+"VANSBRO": {
+"rateExclChurch": 34.572,
+"suggestedTable": 35
+},
+"VARA": {
+"rateExclChurch": 33.542,
+"suggestedTable": 34
+},
+"VARBERG": {
+"rateExclChurch": 32.022,
+"suggestedTable": 32
+},
+"VAXHOLM": {
+"rateExclChurch": 31.922,
+"suggestedTable": 32
+},
+"VELLINGE": {
+"rateExclChurch": 29.972,
+"suggestedTable": 30
+},
+"VETLANDA": {
+"rateExclChurch": 34.062,
+"suggestedTable": 34
+},
+"VILHELMINA": {
+"rateExclChurch": 35.792,
+"suggestedTable": 36
+},
+"VIMMERBY": {
+"rateExclChurch": 34.512,
+"suggestedTable": 35
+},
+"VINDELN": {
+"rateExclChurch": 35.492,
+"suggestedTable": 35
+},
+"VINGÅKER": {
+"rateExclChurch": 33.792,
+"suggestedTable": 34
+},
+"VÄNERSBORG": {
+"rateExclChurch": 33.982,
+"suggestedTable": 34
+},
+"VÄNNÄS": {
+"rateExclChurch": 35.492,
+"suggestedTable": 35
+},
+"VÄRMDÖ": {
+"rateExclChurch": 31.602,
+"suggestedTable": 32
+},
+"VÄRNAMO": {
+"rateExclChurch": 33.572,
+"suggestedTable": 34
+},
+"VÄSTERVIK": {
+"rateExclChurch": 33.312,
+"suggestedTable": 33
+},
+"VÄSTERÅS": {
+"rateExclChurch": 31.532,
+"suggestedTable": 32
+},
+"VÄXJÖ": {
+"rateExclChurch": 32.482,
+"suggestedTable": 32
+},
+"VÅRGÅRDA": {
+"rateExclChurch": 33.382,
+"suggestedTable": 33
+},
+"YDRE": {
+"rateExclChurch": 34.392,
+"suggestedTable": 34
+},
+"YSTAD": {
+"rateExclChurch": 31.582,
+"suggestedTable": 32
+},
+"ÄLMHULT": {
+"rateExclChurch": 34.152,
+"suggestedTable": 34
+},
+"ÄLVDALEN": {
+"rateExclChurch": 35.062,
+"suggestedTable": 35
+},
+"ÄLVKARLEBY": {
+"rateExclChurch": 34.692,
+"suggestedTable": 35
+},
+"ÄLVSBYN": {
+"rateExclChurch": 34.082,
+"suggestedTable": 34
+},
+"ÄNGELHOLM": {
+"rateExclChurch": 31.642,
+"suggestedTable": 32
+},
+"ÅMÅL": {
+"rateExclChurch": 34.232,
+"suggestedTable": 34
+},
+"ÅNGE": {
+"rateExclChurch": 34.912,
+"suggestedTable": 35
+},
+"ÅRE": {
+"rateExclChurch": 34.212,
+"suggestedTable": 34
+},
+"ÅRJÄNG": {
+"rateExclChurch": 34.542,
+"suggestedTable": 35
+},
+"ÅSELE": {
+"rateExclChurch": 35.742,
+"suggestedTable": 36
+},
+"ÅSTORP": {
+"rateExclChurch": 31.762,
+"suggestedTable": 32
+},
+"ÅTVIDABERG": {
+"rateExclChurch": 34.232,
+"suggestedTable": 34
+},
+"ÖCKERÖ": {
+"rateExclChurch": 33.332,
+"suggestedTable": 33
+},
+"ÖDESHÖG": {
+"rateExclChurch": 34.242,
+"suggestedTable": 34
+},
+"ÖREBRO": {
+"rateExclChurch": 33.942,
+"suggestedTable": 34
+},
+"ÖRKELLJUNGA": {
+"rateExclChurch": 30.532,
+"suggestedTable": 31
+},
+"ÖRNSKÖLDSVIK": {
+"rateExclChurch": 34.142,
+"suggestedTable": 34
+},
+"ÖSTERSUND": {
+"rateExclChurch": 34.012,
+"suggestedTable": 34
+},
+"ÖSTERÅKER": {
+"rateExclChurch": 29.222,
+"suggestedTable": 29
+},
+"ÖSTHAMMAR": {
+"rateExclChurch": 33.592,
+"suggestedTable": 34
+},
+"ÖSTRA GÖINGE": {
+"rateExclChurch": 32.462,
+"suggestedTable": 32
+},
+"ÖVERKALIX": {
+"rateExclChurch": 34.432,
+"suggestedTable": 34
+},
+"ÖVERTORNEÅ": {
+"rateExclChurch": 34.132,
+"suggestedTable": 34
+}
+},
+"source": "Skatteverket skattesatser-kommuner-2026.txt, kolumn Summa exkl. kyrkoavgift"
+}

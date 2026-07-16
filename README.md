@@ -27,6 +27,7 @@ Command → Event → (append to log) → Projection (pure fold) → State
 | [`packages/modules/accounting-se`](packages/modules/accounting-se) | Swedish bookkeeping: BAS chart of accounts, double-entry verifications, fiscal years, VAT, trial balance / income statement / balance sheet, SIE4 export. Reuses the kernel's event log; the kernel has no idea this exists. |
 | [`packages/workflows`](packages/workflows) | Deterministic workflow + task engine. Converts business events (e.g. `InvoiceCreated`) into tracked tasks (e.g. `SendInvoiceTask`) with a full lifecycle, without ever executing anything itself. |
 | [`packages/modules/expenses`](packages/modules/expenses) | Employee expense claims: submit → approve → reimburse, modeled directly on the kernel's Bill/BillPayment lifecycle. Reuses the kernel's event log; the kernel has no idea this exists. |
+| [`packages/modules/payroll`](packages/modules/payroll) | Swedish payroll: employees, payroll runs, payslips generated from Skatteverket's real 2026 monthly withholding tables and age-banded employer fee rates. Covers generate → adjust → lock only (tax declaration/payment/ledger-booking are a later phase). Reuses the kernel's event log; the kernel has no idea this exists. |
 | [`apps/api`](apps/api) | Express HTTP layer over all of the above. No business logic of its own — every route loads state, calls a command, appends, responds. **This is what a UI should talk to.** |
 
 Each package also fully explains its own design decisions in its source
@@ -107,6 +108,30 @@ POST /expenses/:id/approve  { companyId }                            -> { expens
 POST /expense-reimbursements { companyId, expenseClaimId, amount }    -> ExpenseClaim
 ```
 
+### Payroll (Swedish) — employees, payroll runs, payslips
+
+Generate → adjust → lock only. Tax withholding is looked up from Skatteverket's
+real published 2026 monthly tables (`GET /payroll/tax-tables` lists the known
+table numbers, `GET /payroll/municipalities` gives a convenience suggested
+table per municipality — the employer still picks the table explicitly on
+each employee). Employer fee rate is derived automatically from the
+employee's age at the payroll period. There is no "apply VÄXA-stöd" action —
+as of the 2026 reform it's a retroactive refund claimed directly with
+Skatteverket, not a payroll-time rate reduction.
+
+```
+POST /employees             { companyId, name, email?, personalNumber?, birthDate?, monthlySalary, taxTable } -> { employeeId }
+GET  /employees?companyId=...                                        -> Employee[]
+POST /employees/:id/terminate { companyId }                           -> { employeeId, status }
+GET  /payroll/tax-tables                                              -> number[] (known Skatteverket table numbers)
+GET  /payroll/municipalities                                          -> { name, suggestedTable }[]
+POST /payroll-runs           { companyId, year, month }                -> { payrollRunId }
+GET  /payroll-runs?companyId=...                                      -> PayrollRun[]
+POST /payroll-runs/:id/finalize { companyId }                          -> { payrollRunId, status } (locks the run — no more payslips can be generated)
+POST /payslips                { companyId, payrollRunId, employeeId }  -> Payslip (gross/tax/net/employer fee, computed from the real tables)
+GET  /payslips?companyId=...&payrollRunId=...                         -> Payslip[]
+```
+
 ### Accounting (Swedish/BAS)
 
 ```
@@ -184,6 +209,7 @@ Every error response is `{ "error": "<message>" }`.
 packages/kernel/                    event store, command/projection/replay core + business domain
 packages/modules/accounting-se/     Swedish accounting module — reuses the kernel's event store
 packages/modules/expenses/          employee expense claims — reuses the kernel's event store
+packages/modules/payroll/           Swedish payroll (employees, runs, payslips) — reuses the kernel's event store
 packages/workflows/                 deterministic workflow + task engine — reuses the kernel's event store
 apps/api/                           HTTP API over the kernel + modules — what a UI talks to
 infrastructure/migrations/          raw SQL migrations
